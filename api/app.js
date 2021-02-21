@@ -3,7 +3,7 @@ const express = require('express');
 const port = 5000;
 
 const app = express();
-var user = require('./model/connection');
+var user = require('./model/dbconfig');
 var authenicate = user.authenticate;
 
 
