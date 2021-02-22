@@ -4,7 +4,6 @@ const validator = require('validator');
 var crypto = require('crypto');
 
 
-
 module.exports = {
     
     authenticate: function (email, password, cb) {
@@ -25,8 +24,8 @@ module.exports = {
         connection.end();
     },
 
-    memberExists: function (email, cb) {
-      
+    memberExists: function (email, cb) { 
+        
         var connection = mysql.createConnection(_db);
         connection.connect();
         connection.query('SELECT * FROM `member` where email = "' + email + '"', function (err, results, fields) {
@@ -43,7 +42,6 @@ module.exports = {
     createMember: function (newUser, cb){
 
        var sql = 'INSERT INTO `member`(`memberName`, `memberSurname`, `email`, `phone`, `password`, `profilePic`) VALUES (?)';
-       
        let hash = crypto.createHash('sha1').update(newUser.password).digest('base64');
        
        let values = [
@@ -69,7 +67,6 @@ module.exports = {
     updateMember: function (user, cb){
         
         let hash = crypto.createHash('sha1').update(user.password).digest('base64');
-        //let sql = 'UPDATE `member` SET `memberName` = ? , `memberSurname` = ? `email` = ?, `phone` = ?, `password` = ?, `profilePic` = ? WHERE id = ?';
         let sql = 'UPDATE `member` SET `memberName` = ? , `memberSurname` = ? , `email` = ?, `phone` = ?, `password` = ?, `profilePic` = ? WHERE memberID = ?';
 
         let values = [
@@ -110,7 +107,6 @@ module.exports = {
     searchMember: function (str, cb){
 
         var sql = 'SELECT * FROM `member` WHERE (`memberName` LIKE ?) OR (`memberSurname` LIKE ?) OR (`email` LIKE ?) OR (`phone` LIKE ?)';
-        //var sql  = 'SELECT * FROM `member`';
         let values = [
             '%'+str+'%',
             '%'+str+'%',
@@ -126,7 +122,5 @@ module.exports = {
  
          connection.createQuery
          connection.end();
-     },
-
-
+     }
 }
