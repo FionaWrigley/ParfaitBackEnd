@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 
-module.exports = function () {
+module.exports = function (app) {
 
     // app.post('/login', (req, res) => {
 
@@ -16,13 +16,15 @@ module.exports = function () {
     //     res.send('login');
     // });
 
-    app.get('/', (req, res) => {
 
-        // //     if(authenicate("bob@hotmail.com", "cheese")){ //
-        // res.send("true"); //     }else{ //         res.send("false"); //     }
-        // app.use('/', routes);
-        res.send("simon");
+app.get('/', (req, res) => {
 
-    });
+    // //     if(authenicate("bob@hotmail.com", "cheese")){ //
+    // res.send("true"); //     }else{ //         res.send("false"); //     }
+    // app.use('/', routes);
+    res.send("simon");
+
+});
+   
 
 }
