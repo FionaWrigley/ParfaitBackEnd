@@ -7,6 +7,7 @@ var cookieParser = require('cookie-parser');
 var member = require('./services/memberservices');
 const rateLimit = require("express-rate-limit");
 
+
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100 // limit each IP to 100 requests per windowMs
@@ -25,7 +26,6 @@ app.use(session({
         secure: false,
         maxAge: 60000 * 60 * 24,
         path: "/"
-        //domain:'http://localhost:5000'
     }
 }))
 
@@ -40,9 +40,9 @@ app.listen(port, () => console.log(`Hello world app listening on port ${port}!`)
 
 app.post('/login', (req, res) => {
 
-    if (req.session.userID) {
-        //find code for login when already logged in
-    } else {
+    // if (req.session.userID) {
+    //     //find code for login when already logged in
+    // } else {
         if (req.body.user.email && req.body.user.password) {
             member.login(req.body.user.email, req.body.user.password, (userID) => {
                 if (userID > 0) {
@@ -59,7 +59,7 @@ app.post('/login', (req, res) => {
         } else {
             res.sendStatus('400');
         }
-    }
+   // }
 });
 
 app.get('/groups', (req, res) => {
