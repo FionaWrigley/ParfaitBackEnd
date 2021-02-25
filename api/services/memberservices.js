@@ -18,12 +18,10 @@ module.exports = {
                         .digest('base64');
                     if (results[0].password == hash) {
                         
-                        group.getGroups(results[0].memberID, function (results) {
-                            return cb(results, true); 
-                        })
-                        
-                    }else{ return cb([], false);}
-                }else{ return cb([], false);}
+                            return cb(results[0].memberID); 
+                    
+                    }else{ return cb(0);}
+                }else{ return cb(0);}
             });
     }
 

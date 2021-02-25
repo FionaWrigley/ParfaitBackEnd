@@ -11,16 +11,10 @@ module.exports = {
         connection.query('SELECT `memberID`, `password` FROM `member` where email = "' + email + '"', function (err, results, fields) {
             if (err) 
                 throw err;
-            
-            //    if (results.length > 0){         let hash =
-            // crypto.createHash('sha1').update(password).digest('base64');         if
-            // (results[0].password == hash){             return cb(true);         }     }
             console.log(results);
             return cb(results);
-        
         })
         connection.end();
-
     },
 
     memberExists: function (email, cb) {
