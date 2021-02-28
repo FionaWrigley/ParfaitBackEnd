@@ -35,7 +35,7 @@ module.exports = {
     createMember: function (newUser, cb) {
 
         var sql = 'INSERT INTO `member`(`memberName`, `memberSurname`, `email`, `phone`, `password`' +
-                ', `profilePic`) VALUES (?)';
+                ') VALUES (?)';
         let hash = crypto
             .createHash('sha1')
             .update(newUser.password)
@@ -46,8 +46,7 @@ module.exports = {
             newUser.lname,
             newUser.email,
             newUser.phone,
-            hash,
-            newUser.pic
+            hash
         ];
 
         var connection = mysql.createConnection(_db);
@@ -69,7 +68,7 @@ module.exports = {
             .update(user.password)
             .digest('base64');
         let sql = 'UPDATE `member` SET `memberName` = ? , `memberSurname` = ? , `email` = ?, `phone' +
-                '` = ?, `password` = ?, `profilePic` = ? WHERE memberID = ?';
+                '` = ?, `password` = ? WHERE memberID = ?';
 
         let values = [
             user.fname,
@@ -77,7 +76,6 @@ module.exports = {
             user.email,
             user.phone,
             hash,
-            user.pic,
             user.id
         ];
 
@@ -128,5 +126,18 @@ module.exports = {
 
         connection.createQuery
         connection.end();
-    }
+    },
+
+    getProfilePic: function (id, cb) {
+
+        var connection = mysql.createConnection(_db);
+        connection.connect();
+        connection.query('SELECT profilePic FROM `member` where memberID = "' + id + '"', function (err, results, fields) {
+            if (err) 
+                throw err;
+            
+            return cb(results);
+        })
+        connection.end();
+    },
 }

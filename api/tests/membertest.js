@@ -4,15 +4,14 @@ var user = require('../model/member');
 var authenicate = user.authenticate;
 
 const newmember = {
-    fname: "suzie",
-    lname: "lovesalot",
-    email: "suzie@hotmail.com",
-    phone: "0422222222",
-    password: "suzie",
+    fname: "Bob",
+    lname: "Jane",
+    email: "bob@hotmail.com",
+    phone: "0422222223",
+    password: "bob",
     pic: null,
     id: 8
 };
-
 
 //authenicate("bob@hotmail.com", "cheese", logresult); //false
 //authenicate("suzie@hotmail.com", "suzie", logresult); //true
@@ -25,7 +24,7 @@ const newmember = {
 
 //user.getMember(8, logresult);
 
-user.searchMember("0411", logresult);
+//user.searchMember("0411", logresult);
 
 function logresult(result){
     console.log(result);

@@ -76,6 +76,40 @@ app.get('/groups', (req, res) => {
     }
 });
 
+app.get('/profilePic', (req, res) => {
+
+    console.log(req.session.id);
+    console.log("in /profilePic route")
+    console.log(req.session.userID);
+   // if (req.session.userID) {
+        
+        member.getProfilePic(8, (result) => {
+            console.log(result);
+            console.log("kkkkkkkkkkkkkkkkkkkkkkkkkk");
+            res.send(result[0].profilePic);
+        })  
+       
+    //} else {
+       // res.sendStatus(403);
+    //}
+});
+
+app.get('/profile', (req, res) => {
+
+    console.log(req.session.id);
+    console.log("in /profile route")
+    console.log(req.session.userID);
+   // if (req.session.userID) {
+        
+        member.getProfile(8, (result) => {
+            console.log(result);
+            console.log("kkkkkkkkkkkkkkkkkkkkkkkkkk");
+            res.send(result[0]);
+        })  
+});
+
+
+
 app.get('/logout', (req, res) => {
 
 });

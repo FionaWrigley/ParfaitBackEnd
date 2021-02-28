@@ -23,6 +23,32 @@ module.exports = {
                     }else{ return cb(0);}
                 }else{ return cb(0);}
             });
+    },
+
+    getProfilePic: function (id, cb) {
+
+        member
+            .getProfilePic(id, function (results) {
+
+                console.log("get Prfile pic")
+                console.log(results);
+               return cb(results); 
+                    
+                    }
+            );
+    },
+
+    getProfile: function (id, cb) {
+
+        member
+            .getMember(id, function (results) {
+
+                console.log("get member")
+                console.log(results);
+               return cb(results); 
+                    
+                    }
+            );
     }
 
     // auth: function (passwords, password){     console.log("in auth func");     if
