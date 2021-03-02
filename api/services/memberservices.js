@@ -25,30 +25,52 @@ module.exports = {
             });
     },
 
+    register: function (fname, lname, email, phone, password, cb) {
+
+        console.log("in memberservices registration");
+        member
+            .createMember(fname, lname, email, phone, password, function (results) {
+
+                //console.log(results);
+                if (results) {
+
+                            return cb(results); 
+                    
+                }else{ return cb(0);}
+            });
+    },
+
+
     getProfilePic: function (id, cb) {
 
         member
             .getProfilePic(id, function (results) {
-
-                console.log("get Prfile pic")
-                console.log(results);
                return cb(results); 
-                    
                     }
             );
     },
 
     getProfile: function (id, cb) {
-
         member
             .getMember(id, function (results) {
-
-                console.log("get member")
-                console.log(results);
-               return cb(results); 
-                    
+               return cb(results);             
                     }
             );
+    },  
+
+    updatePic: function (id, image, cb) {
+
+        console.log("in update pic member service");
+        console.log(image);
+        // member
+        //     .updatePic(id, function (results) {
+
+        //         console.log("get member")
+        //         console.log(results);
+        //        return cb(results); 
+                    
+        //             }
+        //     );
     }
 
     // auth: function (passwords, password){     console.log("in auth func");     if

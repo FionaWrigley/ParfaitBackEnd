@@ -32,20 +32,21 @@ module.exports = {
         connection.end();
     },
 
-    createMember: function (newUser, cb) {
+    createMember: function (fname, lname, email, phone, password, cb) {
 
+        console.log("in create member");
         var sql = 'INSERT INTO `member`(`memberName`, `memberSurname`, `email`, `phone`, `password`' +
                 ') VALUES (?)';
         let hash = crypto
             .createHash('sha1')
-            .update(newUser.password)
+            .update(password)
             .digest('base64');
 
         let values = [
-            newUser.fname,
-            newUser.lname,
-            newUser.email,
-            newUser.phone,
+            fname,
+            lname,
+            email,
+            phone,
             hash
         ];
 

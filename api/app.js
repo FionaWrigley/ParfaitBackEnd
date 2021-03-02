@@ -6,12 +6,17 @@ const session = require('express-session');
 var cookieParser = require('cookie-parser');
 var member = require('./services/memberservices');
 const rateLimit = require("express-rate-limit");
+const fileUpload = require('express-fileupload');
+var multer = require('multer');
+var upload = multer();
 
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100 // limit each IP to 100 requests per windowMs
 });
+
+
 
 const port = 5000;
 
@@ -28,15 +33,17 @@ app.use(session({
         path: "/"
     }
 }))
-
+app.use(fileUpload());
 app.use(cors({origin: 'http://localhost:3000', credentials:true }));
 app.use(cookieParser());
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(limiter);
+app.use(upload.array()); 
+app.use(express.static('public'));
 
-app.listen(port, () => console.log(`Hello world app listening on port ${port}!`));
+app.listen(port, () => console.log(`Parfait listening on port ${port}!`));
 
-//app.use('/', routes);
+
 
 app.post('/login', (req, res) => {
 
@@ -47,12 +54,8 @@ app.post('/login', (req, res) => {
             member.login(req.body.user.email, req.body.user.password, (userID) => {
                 if (userID > 0) {
                     req.session.userID = userID;
-                    //console.log(results);
-                    console.log(req.sessionID);
-                    console.log(userID);
                     res.sendStatus(200);
                 } else {
-                    console.log('in failed')
                     res.sendStatus('401');
                 }
             });
@@ -64,11 +67,8 @@ app.post('/login', (req, res) => {
 
 app.get('/groups', (req, res) => {
 
-    console.log(req.session.id);
-    console.log(req.session.userID);
     if (req.session.userID) {
         group.getGroups(req.session.userID, (result) => {
-            console.log(result);
             res.send(result);
         })
     } else {
@@ -76,36 +76,57 @@ app.get('/groups', (req, res) => {
     }
 });
 
+app.post('/updateProfilePic', upload.single('profilePic'), (req, res) => {
+    console.log("in update profile pic");
+    console.log(JSON.stringify(req.body.profilePic));
+    console.log(req.profilePic);
+    // var img = fs.readFileSync(req.file.path);
+    // var encode_image = img.toString('base64');
+    // console.log(encode_image);
+     
+    // if (req.session.userID) {
+         //member.updatePic(req.session.userID, req.body.profilePic);
+        
+    // } else {
+    //     res.sendStatus(403);
+    // }
+});
+
 app.get('/profilePic', (req, res) => {
 
-    console.log(req.session.id);
-    console.log("in /profilePic route")
-    console.log(req.session.userID);
-   // if (req.session.userID) {
-        
-        member.getProfilePic(8, (result) => {
-            console.log(result);
-            console.log("kkkkkkkkkkkkkkkkkkkkkkkkkk");
+   if (req.session.userID) {
+        member.getProfilePic(req.session.userID, (result) => {
             res.send(result[0].profilePic);
         })  
-       
-    //} else {
-       // res.sendStatus(403);
-    //}
+    }
 });
 
 app.get('/profile', (req, res) => {
 
-    console.log(req.session.id);
-    console.log("in /profile route")
-    console.log(req.session.userID);
-   // if (req.session.userID) {
-        
-        member.getProfile(8, (result) => {
-            console.log(result);
-            console.log("kkkkkkkkkkkkkkkkkkkkkkkkkk");
+    if (req.session.userID) {
+        member.getProfile(req.session.userID, (result) => {
             res.send(result[0]);
         })  
+    }
+});
+
+app.post('/register', (req, res) => {
+    console.log('in /register');
+    console.log(req.body.user.email);
+    if (req.body.user.email && req.body.user.password) {
+
+        member.register(req.body.user.fname, req.body.user.lname, req.body.user.email, req.body.user.phone, req.body.user.password, (userID) => {
+            if (userID > 0) {
+                req.session.userID = userID;
+                res.sendStatus(200);
+            } else {
+                res.sendStatus('401');
+            }
+        });
+    } else {
+        res.sendStatus('400');
+    }
+
 });
 
 
