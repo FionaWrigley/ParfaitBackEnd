@@ -131,5 +131,13 @@ module.exports = {
                 
                 return cb(results);
             })
+    },
+
+    acceptGroup: function (memberID, groupID, cb){
+        //set accepted flag to true for member / group
+    },
+
+    getGroupSchedule: function (groupID, cb){
+        //get all events for all users in group from current date to 12 months from now
     }
 }

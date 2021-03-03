@@ -21,7 +21,6 @@ const newmember = {
 
 //user.createMember(newmember, logresult);
 //user.updateMember(newmember, logresult);
-
 //user.getMember(8, logresult);
 
 //user.searchMember("0411", logresult);
