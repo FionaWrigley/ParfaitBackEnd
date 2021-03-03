@@ -110,6 +110,17 @@ app.get('/profile', (req, res) => {
     }
 });
 
+app.get('/users/:searchVal', (req, res) => {
+
+    //if (req.session.userID) {
+        console.log('searching');
+        console.log(req.params.searchVal)
+        member.searchMembers(req.params.searchVal, (result) => {
+            res.send(result);
+        })  
+    //}
+});
+
 app.post('/register', (req, res) => {
     console.log('in /register');
     console.log(req.body.user.email);

@@ -1,118 +1,135 @@
 var mysql = require('mysql');
 var _db = require('./dbconfig');
-//const validator = require('validator');
-//var crypto = require('crypto');
+var pool = mysql.createPool(_db);
+
+//const validator = require('validator'); var crypto = require('crypto');
 
 module.exports = {
 
     getGroups: function (memberID, cb) {
 
-        var connection = mysql.createConnection(_db);
-        connection.connect();
-        connection.query('SELECT * FROM `parfaitgroup` INNER JOIN `groupmember` ON parfaitgroup.groupID = groupmember.groupID where groupmember.memberID = "' + memberID + '"', function (err, results, fields) {
-            if (err) 
-                 throw err;
+        pool
+            .query('SELECT * FROM `parfaitgroup` INNER JOIN `groupmember` ON parfaitgroup.groupID = ' +
+                    'groupmember.groupID where groupmember.memberID = "' + memberID + '"', function (err, results, fields) {
+                if (err) 
+                    throw err;
+                
+                return cb(results);
+            })
+    },
 
-            return cb(results);
+    createGroup: function (groupName, groupDescription, groupPic, userList, cb) {
+
+        let groupID = '';
+        var sql = 'INSERT INTO `parfaitgroup`(`groupName`, `groupDescription`, `groupPic`) VALUES (' +
+                '?)';
+
+        let values = [groupName, groupDescription, groupPic];
+
+        pool.getConnection((err, connection) => {
+            connection.beginTransaction((err) => {
+                if (err) {
+                    throw err;
+                }
+                connection.query(sql, [values], (err, results) => {
+                    if (err) {
+                        return connection.rollback(() => {
+                            connection.release();
+                            throw err;
+                        });
+                    }
+                    let groupID = results.insertId;
+                    let records = [];
+
+                    sql = 'INSERT INTO `groupmember`(`groupID`, `memberID`, `activeFlag`, `adminFlag`) VALU' +
+                            'ES ?';
+
+                    for (i = 0; i < userList.length; i++) {
+                        records.push([groupID, userList[i].memberID, userList[i].activeFlag, userList[i].adminFlag]);
+                    }
+
+                    connection.query(sql, [records], (error, results2) => {
+                        if (error) {
+                            return connection.rollback(() => {
+                                connection.release();
+                                throw error;
+                            });
+                        }
+                        connection
+                            .commit(function (err) {
+                                if (err) {
+                                    return connection.rollback(function () {
+                                        connection.release();
+                                        throw err;
+                                    });
+                                }
+                                connection.release();
+                                return cb('success');
+                            });
+                    });
+                })
+            })
         })
-        connection.end();
+    },
+
+
+    deleteGroup: function (groupID, cb) {
+ 
+        var sql = 'DELETE FROM `groupmember` WHERE `groupID` ='+groupID;
+
+        pool.getConnection((err, connection) => {
+            connection.beginTransaction((err) => {
+                if (err) {
+                    throw err;
+                }
+                connection.query(sql, (err, results) => {
+                    if (err) {
+                        return connection.rollback(() => {
+                            connection.release();
+                            throw err;
+                        });
+                    }
+
+                    sql = 'DELETE FROM `parfaitgroup` WHERE `groupID` ='+groupID;
+
+                    connection.query(sql, (error, results2) => {
+                        if (error) {
+                            return connection.rollback(() => {
+                                connection.release();
+                                throw error;
+                            });
+                        }
+                        connection
+                            .commit((err) => {
+                                if (err) {
+                                    return connection.rollback(() => {
+                                        connection.release();
+                                        throw err;
+                                    });
+                                }
+                                connection.release();
+                                return cb('success');
+                            });
+                    });
+                })
+            })
+        })
+    },
+
+    deleteGroupMember: function (memberID, groupID, cb) {
+
+        sql = 'DELETE FROM `groupmember` WHERE `groupID` = ? AND `memberID` = ?';
+        
+        let values = [
+            groupID,
+            memberID,
+        ];
+
+        pool.query(sql, values, (error, results) => {
+                if (error) 
+                    throw error;
+                
+                return cb(results);
+            })
     }
-
-    // createMember: function (newUser, cb) {
-
-    //     var sql = 'INSERT INTO `member`(`memberName`, `memberSurname`, `email`, `phone`, `password`' +
-    //             ', `profilePic`) VALUES (?)';
-    //     let hash = crypto
-    //         .createHash('sha1')
-    //         .update(newUser.password)
-    //         .digest('base64');
-
-    //     let values = [
-    //         newUser.fname,
-    //         newUser.lname,
-    //         newUser.email,
-    //         newUser.phone,
-    //         hash,
-    //         newUser.pic
-    //     ];
-
-    //     var connection = mysql.createConnection(_db);
-    //     connection.connect();
-    //     connection.query(sql, [values], function (err, result) {
-    //         if (err) 
-    //             throw err;
-    //         cb(result.insertId);
-    //     });
-
-    //     connection.createQuery
-    //     connection.end();
-    // },
-
-    // updateMember: function (user, cb) {
-
-    //     let hash = crypto
-    //         .createHash('sha1')
-    //         .update(user.password)
-    //         .digest('base64');
-    //     let sql = 'UPDATE `member` SET `memberName` = ? , `memberSurname` = ? , `email` = ?, `phone' +
-    //             '` = ?, `password` = ?, `profilePic` = ? WHERE memberID = ?';
-
-    //     let values = [
-    //         user.fname,
-    //         user.lname,
-    //         user.email,
-    //         user.phone,
-    //         hash,
-    //         user.pic,
-    //         user.id
-    //     ];
-
-    //     var connection = mysql.createConnection(_db);
-    //     connection.connect();
-    //     connection.query(sql, values, function (err, result) {
-    //         if (err) 
-    //             throw err;
-    //         cb(result.insertId);
-    //     });
-
-    //     connection.createQuery
-    //     connection.end();
-    // },
-
-    // getMember: function (id, cb) {
-
-    //     var connection = mysql.createConnection(_db);
-    //     connection.connect();
-    //     connection.query('SELECT * FROM `member` where memberID = "' + id + '"', function (err, results, fields) {
-    //         if (err) 
-    //             throw err;
-    //         if (results.length > 0) {
-    //             return cb(results);
-    //         }
-    //         return cb(results);
-    //     })
-    //     connection.end();
-    // },
-
-    // searchMember: function (str, cb) {
-
-    //     var sql = 'SELECT * FROM `member` WHERE (`memberName` LIKE ?) OR (`memberSurname` LIKE ?) O' +
-    //             'R (`email` LIKE ?) OR (`phone` LIKE ?)';
-    //     let values = [
-    //         '%' + str + '%',
-    //         '%' + str + '%',
-    //         '%' + str + '%',
-    //         '%' + str + '%'
-    //     ];
-    //     var connection = mysql.createConnection(_db);
-    //     connection.connect();
-    //     connection.query(sql, values, function (err, result) {
-    //         if (err) 
-    //             throw err;
-    //         cb(result);
-    //     });
-
-    //     connection.createQuery
-    //     connection.end();
-    // }
 }
