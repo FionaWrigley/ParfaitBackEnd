@@ -5,6 +5,7 @@ var pool = mysql.createPool(_db);
 
 module.exports = {
 
+    //get user id and password for an email address
     getMemberIDPassword: function (email, cb) {
        
         pool.query('SELECT `memberID`, `password` FROM `member` where email = "' + email + '"', function (err, results, fields) {
@@ -15,6 +16,7 @@ module.exports = {
         })
     },
 
+    //check if email already exists
     memberExists: function (email, cb) {
 
         pool.query('SELECT * FROM `member` where email = "' + email + '"', function (err, results, fields) {
@@ -27,6 +29,7 @@ module.exports = {
         })
     },
 
+    //create a new member with hashed password
     createMember: function (fname, lname, email, phone, password, cb) {
 
         console.log("in create member");
@@ -52,6 +55,7 @@ module.exports = {
         });
     },
 
+    //update a member
     updateMember: function (user, cb) {
 
         let hash = crypto
@@ -77,6 +81,7 @@ module.exports = {
         });
     },
 
+    //get member details for a specific member ID
     getMember: function (id, cb) {
         pool.query('SELECT * FROM `member` where memberID = "' + id + '"', function (err, results, fields) {
             if (err) 
@@ -88,6 +93,7 @@ module.exports = {
         })
     },
 
+    //search member on phone/first name/surname/or email
     searchMember: function (str, cb) {
 
         var sql = 'SELECT * FROM `member` WHERE (`memberName` LIKE ?) OR (`memberSurname` LIKE ?) O' +
@@ -105,6 +111,7 @@ module.exports = {
         });
     },
 
+    //get member profile pic
     getProfilePic: function (id, cb) {
         pool.query('SELECT profilePic FROM `member` where memberID = "' + id + '"', function (err, results, fields) {
             if (err) 
@@ -113,4 +120,8 @@ module.exports = {
             return cb(results);
         })
     },
+
+    //update profile pic - blob
+    updateProfilePic: function (id, pic, cb) {
+    }
 }

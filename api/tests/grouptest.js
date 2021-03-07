@@ -21,11 +21,12 @@ const users = [
         adminFlag : true
     }];
 
-
 //group.getGroups(8, logresult)
 //group.createGroup("Pub pals", "Anyone fancy a beer?", null, users, logresult)
-//group.deleteMember(8,67,logresult);
 //group.deleteGroup(67, logresult);
+//deleteGroupMember(memberID, groupID, cb);
+//acceptGroup(memberID, groupID, cb);
+//getGroupSchedule(groupID, cb);
 
 function logresult(result){
     console.log(result);

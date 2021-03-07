@@ -4,6 +4,7 @@ var pool = mysql.createPool(_db);
 
 module.exports = {
 
+    //add an event
     createEvent: function (startDate, startTime, endDate, endTime, eventName, eventDesc, repeatFrequency, repeatUntil, groupID, memberID, acceptedFlag, cb) {
         var sql = 'INSERT INTO `event`(`startDate`, `startTime`, `endDate`, `endTime`, `eventName`,`eventDescription`, `repeatFrequency`, `repeatUntil`, `groupID`) VALUES (?)';
 
@@ -100,8 +101,9 @@ module.exports = {
         })
     },
 
+    //delete member from event, if no other members share event - delete event.
     deleteMemberEvent: function (eventID, memberID, cb) {
-        //delete member from event, if no other members share event - delete event.
+  
         var sql = 'DELETE FROM `eventmember` WHERE `eventID` ='+eventID+ ' AND `memberID` = '+memberID;
 
         pool.getConnection((err, connection) => {
@@ -142,19 +144,116 @@ module.exports = {
         })
     },
 
-    editEvent: function (cb) {
-        //self explanatory
+    editEvent: function  (eventID, startDate, startTime, endDate, endTime, eventName, eventDesc, repeatFrequency, repeatUntil, cb) {
+        
+        let sql = 'UPDATE `event` SET `startDate` = ?, `startTime` = ?, `endTime` = ?, `eventName` = ?, `eventDescription` = ?, `eventFrequency` = ?, `repeatUntil` = ?   WHERE eventID = ?';
+
+        let values = [
+            eventID,
+            startDate,
+            startTime,
+            endDate,
+            endTime,
+            eventName,
+            eventDesc,
+            repeatFrequency,
+            repeatUntil
+        ];
+
+        pool.query(sql, values, function (err, result) {
+            if (err) 
+                throw err;
+            cb(result.insertId);
+        });
     },
 
+    //accepted flag = true where event ID and memberID
     acceptEvent: function (eventID, memberID, cb) {
-        //accepted flag = true where group ID and memberID
+      
+        let sql = 'UPDATE `eventmember` SET `acceptedFlag` = true WHERE memberID = ? AND eventID = ?';
+
+        let values = [
+            memberID,
+            eventID
+        ];
+
+        pool.query(sql, values, function (err, result) {
+            if (err) 
+                throw err;
+            cb(result);
+        });
     },
 
+    //get events for a member for a specific date
     getMemberEvents: function (memberID, dateSelected, cb) {
-        //get events for a member for a specific date
+        
+        pool.query('SELECT * FROM `event` innerjoin `eventmember` where `event.eventID` = `eventmember.eventID` AND `eventmember.memberID` = "' + memberID + '" AND ("'+dateSelected+'" BETWEEN `event.startDate` AND `event.endDate`)' , function (err, results, fields) {
+            if (err) 
+                throw err;
+            console.log(results);
+            return cb(results);
+        })
     },
 
-    createGroupEvent: function (startDate, startTime, endDate, endTime, eventName, eventDesc, repeatFrequency, repeatUntil, groupID, memberID, members, accpetedFlag, cb) {
-        //create and event for multiple members
+    //create an event for multiple members
+    createGroupEvent: function (startDate, startTime, endDate, endTime, eventName, eventDesc, repeatFrequency, repeatUntil, groupID, userList, cb) {
+
+        var sql = 'INSERT INTO `event`(`startDate`, `startTime`, `endDate`, `endTime`, `eventName`,`eventDescription`, `repeatFrequency`, `repeatUntil`, `groupID`) VALUES (?)';
+
+        let values = [
+            startDate,
+            startTime,
+            endDate,
+            endTime,
+            eventName,
+            eventDesc,
+            repeatFrequency,
+            repeatUntil,
+            groupID
+        ];
+        pool.getConnection((err, connection) => {
+            connection.beginTransaction((err) => {
+                if (err) {
+                    throw err;
+                }
+                connection.query(sql, [values], (err, results) => {
+                    if (err) {
+                        return connection.rollback(() => {
+                            connection.release();
+                            throw err;
+                        });
+                    }
+                    let eventID = results.insertId;
+                    let records = [];
+
+                    for (i = 0; i < userList.length; i++) {
+                        records.push([eventID, userList[i].memberID, userList[i].acceptedFlag]);
+                    }
+
+                    sql = 'INSERT INTO `eventmember`(`eventID`, `memberID`, `acceptedFlag`) VALUES ?';
+                    //values = [eventID, memberID, acceptedFlag];
+                    
+                    connection.query(sql, [records], (error, results) => {
+                        if (error) {
+                            return connection.rollback(() => {
+                                connection.release();
+                                throw error;
+                            });
+                        }
+                        connection
+                            .commit(function (err) {
+                                if (err) {
+                                    return connection.rollback(function () {
+                                        connection.release();
+                                        throw err;
+                                    });
+                                }
+                                connection.release();
+                                return cb('success');
+                            });
+                    });
+                })
+            })
+        })
     }
 }
