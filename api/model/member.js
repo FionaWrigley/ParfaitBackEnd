@@ -32,7 +32,6 @@ module.exports = {
     //create a new member with hashed password
     createMember: function (fname, lname, email, phone, password, cb) {
 
-        console.log("in create member");
         var sql = 'INSERT INTO `member`(`memberName`, `memberSurname`, `email`, `phone`, `password`' +
                 ') VALUES (?)';
         let hash = crypto

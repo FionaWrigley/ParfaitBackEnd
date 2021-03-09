@@ -11,7 +11,6 @@ module.exports = {
             .getMemberIDPassword(email, function (results) {
 
                 if (results.length > 0) {
-
                     let hash = crypto
                         .createHash('sha1')
                         .update(password)
@@ -28,6 +27,8 @@ module.exports = {
     register: function (fname, lname, email, phone, password, cb) {
 
         console.log("in memberservices registration");
+        
+        
         //do some validation...
         member
             .createMember(fname, lname, email, phone, password, function (results) {
@@ -45,7 +46,6 @@ module.exports = {
             return cb(results);
 
             })
-
     },
 
     getProfilePic: function (id, cb) {

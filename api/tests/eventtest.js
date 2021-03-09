@@ -50,7 +50,8 @@ let userList = [
 //editEvent(eventID, startDate, startTime, endDate, endTime, eventName, eventDesc, repeatFrequency, repeatUntil, cb);
 
 //event.deleteMemberEvent(5, 8, logresult);
-//getMemberEvents(memberID, dateSelected, cb);
+// getMemberEvents(memberID, dateSelected, cb);
+event.getMemberEvents(21, '2021-03-09', logresult);
 
 function logresult(result){
     console.log(result);

@@ -10,7 +10,6 @@ module.exports = {
                     'groupmember.groupID where groupmember.memberID = "' + memberID + '"', function (err, results, fields) {
                 if (err) 
                     throw err;
-                
                 return cb(results);
             })
     },
@@ -67,8 +66,11 @@ module.exports = {
         })
     },
 
+    //delete group including group member entries, 
+    
+///////////////////////TODO/////////////////////////////////////////
+//delete group events
 
-    //delete group including group member entries
     deleteGroup: function (groupID, cb) {
  
         var sql = 'DELETE FROM `groupmember` WHERE `groupID` ='+groupID;
@@ -113,7 +115,11 @@ module.exports = {
     },
 
     //delete group member, if last group member, also delete group
-    deleteGroupMember: function (memberID, groupID, cb) {
+
+///////////////////////TODO/////////////////////////////////////////
+//delete group event from member && if last group member delete all group events for group
+    
+deleteGroupMember: function (memberID, groupID, cb) {
 
         let sql = 'DELETE FROM `groupmember` WHERE `groupID` = ? AND `memberID` = ?';
         

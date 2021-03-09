@@ -1,4 +1,6 @@
 const express = require('express');
+//require('dotenv').config({ path: './.env'});
+//dotenv.config();
 var cors = require('cors');
 var group = require('./model/group');
 var bodyParser = require('body-parser');
@@ -11,9 +13,17 @@ var multer = require('multer');
 var upload = multer();
 
 
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+const { body, validationResult } = require('express-validator');
+
+
+const secondLimit = rateLimit({
+    windowMs: 1000, // 15 minutes
     max: 100 // limit each IP to 100 requests per windowMs
+});
+
+const dailyLimit = rateLimit({
+    windowMs: 1440 * 60 * 1000, // 15 minutes
+    max: 1000 // limit each IP to 100 requests per windowMs
 });
 
 
@@ -37,7 +47,7 @@ app.use(fileUpload());
 app.use(cors({origin: 'http://localhost:3000', credentials:true }));
 app.use(cookieParser());
 app.use(bodyParser.json()); // support json encoded bodies
-app.use(limiter);
+app.use(secondLimit, dailyLimit);
 app.use(upload.array()); 
 app.use(express.static('public'));
 
@@ -54,7 +64,7 @@ app.post('/login', (req, res) => {
             member.login(req.body.user.email, req.body.user.password, (userID) => {
                 if (userID > 0) {
                     req.session.userID = userID;
-                    res.sendStatus(200);
+                    res.sendStatus(204);
                 } else {
                     res.sendStatus('401');
                 }
@@ -72,7 +82,7 @@ app.get('/groups', (req, res) => {
             res.send(result);
         })
     } else {
-        res.sendStatus(403);
+        res.sendStatus(401);
     }
 });
 
@@ -111,20 +121,49 @@ app.get('/profile', (req, res) => {
 });
 
 app.get('/users/:searchVal', (req, res) => {
-
-    //if (req.session.userID) {
-        console.log('searching');
+    if (req.session.userID) {
         console.log(req.params.searchVal)
         member.searchMembers(req.params.searchVal, (result) => {
             res.send(result);
         })  
-    //}
+    }else{
+        res.sendStatus(403);
+    }
 });
 
-app.post('/register', (req, res) => {
-    console.log('in /register');
-    console.log(req.body.user.email);
-    if (req.body.user.email && req.body.user.password) {
+// app.post('/register',  (req, res) => {
+//     console.log('in /register');
+//     console.log(req.body.user.email);
+//     if (req.body.user.email && req.body.user.password) {
+
+//         member.register(req.body.user.fname, req.body.user.lname, req.body.user.email, req.body.user.phone, req.body.user.password, (userID) => {
+//             if (userID > 0) {
+//                 req.session.userID = userID;
+//                 res.sendStatus(200);
+//             } else {
+//                 res.sendStatus('401');
+//             }
+//         });
+//     } else {
+//         res.sendStatus('400');
+//     }
+
+// });
+
+app.post('/register', [
+    body('user.fname', "Invalid Name").isAlpha(),
+    body('user.lname', "Invalid Name").isAlpha(),
+    body('user.email', "Not a valid email").isEmail(),
+    body('user.phone', "Phone number should be 10 digits and contain only numbers").isLength({min: 10}).isNumeric(),
+    body('user.password', "Password should contain a minimum of 8 characters, including one upper case letter, one lower case letter, and one number.").isStrongPassword()],
+
+  (req, res) => {
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        console.log(errors);
+      return res.status(400).json({ errors: errors.array() });
+    }
 
         member.register(req.body.user.fname, req.body.user.lname, req.body.user.email, req.body.user.phone, req.body.user.password, (userID) => {
             if (userID > 0) {
@@ -134,12 +173,7 @@ app.post('/register', (req, res) => {
                 res.sendStatus('401');
             }
         });
-    } else {
-        res.sendStatus('400');
-    }
-
 });
-
 
 
 app.get('/logout', (req, res) => {
