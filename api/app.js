@@ -1,32 +1,29 @@
 const express = require('express');
-//require('dotenv').config({ path: './.env'});
-//dotenv.config();
+require('dotenv').config();
 var cors = require('cors');
 var group = require('./model/group');
 var bodyParser = require('body-parser');
 const session = require('express-session');
 var cookieParser = require('cookie-parser');
 var member = require('./services/memberservices');
+var group = require('./model/group');
+var event = require('./model/event');
 const rateLimit = require("express-rate-limit");
 const fileUpload = require('express-fileupload');
 var multer = require('multer');
 var upload = multer();
 
-
-const { body, validationResult } = require('express-validator');
-
+const {body, validationResult} = require('express-validator');
 
 const secondLimit = rateLimit({
-    windowMs: 1000, // 15 minutes
-    max: 100 // limit each IP to 100 requests per windowMs
+    windowMs: 1000, // 1 second
+    max: 3 // limit each IP to 100 requests per windowMs
 });
 
 const dailyLimit = rateLimit({
-    windowMs: 1440 * 60 * 1000, // 15 minutes
-    max: 1000 // limit each IP to 100 requests per windowMs
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    max: 1000 // limit each IP to 1000 requests per windowMs
 });
-
-
 
 const port = 5000;
 
@@ -39,40 +36,38 @@ app.use(session({
     cookie: {
         httpOnly: true,
         secure: false,
-        maxAge: 60000 * 60 * 24,
+        maxAge: 60000 * 60 * 48,
         path: "/"
     }
 }))
 app.use(fileUpload());
-app.use(cors({origin: 'http://localhost:3000', credentials:true }));
+app.use(cors({origin: 'http://localhost:3000', credentials: true}));
 app.use(cookieParser());
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(secondLimit, dailyLimit);
-app.use(upload.array()); 
+app.use(upload.array());
 app.use(express.static('public'));
 
 app.listen(port, () => console.log(`Parfait listening on port ${port}!`));
 
+app.post('/login', body('user.email').not().isEmpty(), body('user.password').not().isEmpty(), (req, res) => {
 
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        console.log(errors);
+        return res
+            .status(400)
+            .json({errors: "Invalid username or password"});
+    }
 
-app.post('/login', (req, res) => {
-
-    // if (req.session.userID) {
-    //     //find code for login when already logged in
-    // } else {
-        if (req.body.user.email && req.body.user.password) {
-            member.login(req.body.user.email, req.body.user.password, (userID) => {
-                if (userID > 0) {
-                    req.session.userID = userID;
-                    res.sendStatus(204);
-                } else {
-                    res.sendStatus('401');
-                }
-            });
+    member.login(req.body.user.email, req.body.user.password, (userID) => {
+        if (userID > 0) {
+            req.session.userID = userID;
+            res.sendStatus(204);
         } else {
-            res.sendStatus('400');
+            res.sendStatus('401');
         }
-   // }
+    });
 });
 
 app.get('/groups', (req, res) => {
@@ -90,24 +85,18 @@ app.post('/updateProfilePic', upload.single('profilePic'), (req, res) => {
     console.log("in update profile pic");
     console.log(JSON.stringify(req.body.profilePic));
     console.log(req.profilePic);
-    // var img = fs.readFileSync(req.file.path);
-    // var encode_image = img.toString('base64');
-    // console.log(encode_image);
-     
-    // if (req.session.userID) {
-         //member.updatePic(req.session.userID, req.body.profilePic);
-        
-    // } else {
-    //     res.sendStatus(403);
-    // }
+    // var img = fs.readFileSync(req.file.path); var encode_image =
+    // img.toString('base64'); console.log(encode_image); if (req.session.userID) {
+    // member.updatePic(req.session.userID, req.body.profilePic); } else {
+    // res.sendStatus(403); }
 });
 
 app.get('/profilePic', (req, res) => {
 
-   if (req.session.userID) {
+    if (req.session.userID) {
         member.getProfilePic(req.session.userID, (result) => {
             res.send(result[0].profilePic);
-        })  
+        })
     }
 });
 
@@ -116,8 +105,34 @@ app.get('/profile', (req, res) => {
     if (req.session.userID) {
         member.getProfile(req.session.userID, (result) => {
             res.send(result[0]);
-        })  
+        })
     }
+});
+
+app.post('/profile', 
+            body('user.fname', "Invalid Name").isAlpha().trim().escape(), 
+            body('user.lname', "Invalid Name").isAlpha().trim().escape(), 
+            body('user.email', "Not a valid email").isEmail().trim().escape().normalizeEmail(), 
+            body('user.phone', "Phone number should be 10 digits and contain only numbers").isLength({min: 10}).isNumeric().trim().escape(), 
+            
+            (req, res) => {
+    
+                const errors = validationResult(req);
+                if (!errors.isEmpty()) {
+                    console.log(errors);
+                    return res.status(400).json({errors: errors.array()});
+                }
+                if (req.session.userID) {
+                    
+                    let user = req.body.user;
+                    user.userID = req.session.userID;
+                    console.log(user.userID);
+                    member.updateProfile(user, (result) => {
+                        res.sendStatus(204);
+                    })
+                }else {
+                    res.sendStatus(403);
+                }
 });
 
 app.get('/users/:searchVal', (req, res) => {
@@ -125,57 +140,104 @@ app.get('/users/:searchVal', (req, res) => {
         console.log(req.params.searchVal)
         member.searchMembers(req.params.searchVal, (result) => {
             res.send(result);
-        })  
-    }else{
+        })
+    } else {
         res.sendStatus(403);
     }
 });
 
-// app.post('/register',  (req, res) => {
-//     console.log('in /register');
-//     console.log(req.body.user.email);
-//     if (req.body.user.email && req.body.user.password) {
-
-//         member.register(req.body.user.fname, req.body.user.lname, req.body.user.email, req.body.user.phone, req.body.user.password, (userID) => {
-//             if (userID > 0) {
-//                 req.session.userID = userID;
-//                 res.sendStatus(200);
-//             } else {
-//                 res.sendStatus('401');
-//             }
-//         });
-//     } else {
-//         res.sendStatus('400');
-//     }
-
-// });
-
+//register route
 app.post('/register', [
-    body('user.fname', "Invalid Name").isAlpha(),
-    body('user.lname', "Invalid Name").isAlpha(),
-    body('user.email', "Not a valid email").isEmail(),
-    body('user.phone', "Phone number should be 10 digits and contain only numbers").isLength({min: 10}).isNumeric(),
-    body('user.password', "Password should contain a minimum of 8 characters, including one upper case letter, one lower case letter, and one number.").isStrongPassword()],
-
-  (req, res) => {
-
+    body('user.fname', "Invalid Name").isAlpha().trim().escape(),
+    body('user.lname', "Invalid Name").isAlpha().trim().escape(),
+    body('user.email', "Not a valid email").isEmail().trim().escape().normalizeEmail(),
+    body('user.phone', "Phone number should be 10 digits and contain only numbers")
+        .isLength({min: 10})
+        .isNumeric().trim().escape(),
+    body('user.password', "Password should contain a minimum of 8 characters, including one upper case lett" +
+            "er, one lower case letter, and one number.").isStrongPassword().trim().escape()
+], (req, res) => {
+    console.log("in register")
     const errors = validationResult(req);
+    
+    //if posted fields are not valid
     if (!errors.isEmpty()) {
         console.log(errors);
-      return res.status(400).json({ errors: errors.array() });
+        return res
+            .status(400)
+            .json({
+                errors: errors.array()
+            });
     }
 
-        member.register(req.body.user.fname, req.body.user.lname, req.body.user.email, req.body.user.phone, req.body.user.password, (userID) => {
-            if (userID > 0) {
-                req.session.userID = userID;
-                res.sendStatus(200);
-            } else {
-                res.sendStatus('401');
-            }
-        });
+    //posted fields are valid, register user
+    member.register(req.body.user, (userID) => {
+        if (userID > 0) {
+            console.log("success")
+            req.session.userID = userID;
+            res.sendStatus(200);
+        } else {
+            res.sendStatus('401');
+        }
+    });
 });
 
-
 app.get('/logout', (req, res) => {
+    req
+        .session
+        .destroy(function (err) {
+            if (err) {
+                msg = 'Error destroying session';
+                res.json(msg);
+            } else {
+                msg = 'Session destroyed successfully';
+                console.log(msg)
+                res.json(msg);
+            }
+        })
+});
 
+app.post('/creategroup', 
+            body('group.name', "Group name must be alphanumeric").trim().escape(), 
+            body('group.description').trim().escape(), 
+            
+            (req, res) => {
+    
+                const errors = validationResult(req);
+                if (!errors.isEmpty()) {
+                    console.log(errors);
+                    return res.status(400).json({errors: errors.array()});
+                }
+                if (req.session.userID) {
+                    
+                    group.createGroup(req.body.group, req.session.userID, (result) => {
+                        res.sendStatus(200);
+                    })
+                }else {
+                    res.sendStatus(500);
+                }
+});
+
+app.post('/scheduleday', (req, res) => {
+
+                console.log(req.body.date);
+                console.log(req.body.userID);
+    
+                const errors = validationResult(req);
+                if (!errors.isEmpty()) {
+                    console.log(errors);
+                    return res.status(400).json({errors: errors.array()});
+                }
+
+                if (req.session.userID) {
+
+
+
+                  
+                    event.getMemberEvents(req.session.userID, req.body.date, (result) => {
+                        res.status(200).send(result);
+                    })
+                }else {
+                    //res.sendStatus(500);
+                }
 });

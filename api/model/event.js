@@ -187,7 +187,7 @@ module.exports = {
     //get events for a member for a specific date
     getMemberEvents: function (memberID, dateSelected, cb) {
         
-        pool.query('SELECT * FROM `event` INNER JOIN `eventmember` where event.eventID = eventmember.eventID AND eventmember.memberID = "' + memberID + '" AND ("'+dateSelected+'" BETWEEN event.startDate AND event.endDate)' , function (err, results, fields) {
+        pool.query('SELECT * FROM `event` INNER JOIN `eventmember` where event.eventID = eventmember.eventID AND eventmember.memberID = "' + memberID + '" AND ("'+dateSelected+'" BETWEEN event.startDate AND event.endDate) ORDER BY event.startTime DESC' , function (err, results, fields) {
             if (err) 
                 throw err;
             console.log(results);

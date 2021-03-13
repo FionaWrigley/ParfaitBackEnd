@@ -15,11 +15,15 @@ module.exports = {
     },
 
     //create a new group including update of group members table
-    createGroup: function (groupName, groupDescription, groupPic, userList, cb) {
-        
+   // createGroup: function (groupName, groupDescription, groupPic, userList, cb) {
+    createGroup: function (group, userID, cb) {
+
+        let userList = group.members;
+        let values = [group.name, group.description, null];
+
         var sql = 'INSERT INTO `parfaitgroup`(`groupName`, `groupDescription`, `groupPic`) VALUES (' +
                 '?)';
-        let values = [groupName, groupDescription, groupPic];
+        
 
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
@@ -34,14 +38,18 @@ module.exports = {
                         });
                     }
                     let groupID = results.insertId;
-                    let records = [];
+                    let records = []; 
 
                     sql = 'INSERT INTO `groupmember`(`groupID`, `memberID`, `activeFlag`, `adminFlag`) VALU' +
                             'ES ?';
 
+                     
+                    //generate groupmember records
                     for (i = 0; i < userList.length; i++) {
-                        records.push([groupID, userList[i].memberID, userList[i].activeFlag, userList[i].adminFlag]);
+                        records.push([groupID, userList[i].memberID, true, false]);
                     }
+
+                    records.push([groupID, userID, true, true]); //add current user to group
 
                     connection.query(sql, [records], (error, results2) => {
                         if (error) {

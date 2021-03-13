@@ -2,11 +2,12 @@ const {authenticate} = require('../model/member');
 const member = require('../model/member');
 const group = require('../model/group');
 var crypto = require('crypto');
+var validator = require('validator');
+
 
 module.exports = {
 
     login: function (email, password, cb) {
-
         member
             .getMemberIDPassword(email, function (results) {
 
@@ -16,22 +17,16 @@ module.exports = {
                         .update(password)
                         .digest('base64');
                     if (results[0].password == hash) {
-                        
                             return cb(results[0].memberID); 
-                    
                     }else{ return cb(0);}
                 }else{ return cb(0);}
             });
     },
 
-    register: function (fname, lname, email, phone, password, cb) {
+    register: function (user, cb) {
 
-        console.log("in memberservices registration");
-        
-        
-        //do some validation...
         member
-            .createMember(fname, lname, email, phone, password, function (results) {
+            .createMember(user.fname, user.lname, user.email, user.phone, user.password, function (results) {
 
                 //console.log(results);
                 if (results) {
@@ -65,6 +60,17 @@ module.exports = {
                     }
             );
     },  
+
+    updateProfile: function (user, cb) {
+
+        console.log("member services update");
+        member
+            .updateMember(user, function (results) {
+
+               return cb(results);             
+                    }
+            );
+    },
 
     updatePic: function (id, image, cb) {
 

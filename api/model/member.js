@@ -32,7 +32,7 @@ module.exports = {
     //create a new member with hashed password
     createMember: function (fname, lname, email, phone, password, cb) {
 
-        var sql = 'INSERT INTO `member`(`memberName`, `memberSurname`, `email`, `phone`, `password`' +
+        var sql = 'INSERT INTO `member`(`fname`, `lname`, `email`, `phone`, `password`' +
                 ') VALUES (?)';
         let hash = crypto
             .createHash('sha1')
@@ -57,25 +57,29 @@ module.exports = {
     //update a member
     updateMember: function (user, cb) {
 
-        let hash = crypto
-            .createHash('sha1')
-            .update(user.password)
-            .digest('base64');
-        let sql = 'UPDATE `member` SET `memberName` = ? , `memberSurname` = ? , `email` = ?, `phone' +
-                '` = ?, `password` = ? WHERE memberID = ?';
+        console.log('model member update ')
+        console.log(user);
+
+        // let hash = crypto
+        //     .createHash('sha1')
+        //     .update(user.password)
+        //     .digest('base64');
+        let sql = 'UPDATE `member` SET `fname` = ? , `lname` = ? , `email` = ?, `phone` = ? WHERE memberID = ?';
 
         let values = [
             user.fname,
             user.lname,
             user.email,
             user.phone,
-            hash,
-            user.id
+            user.memberID
         ];
 
         pool.query(sql, values, function (err, result) {
-            if (err) 
+            if (err){
+                console.log(err);
                 throw err;
+            }
+            console.log(result);
             cb(result.insertId);
         });
     },
@@ -95,7 +99,7 @@ module.exports = {
     //search member on phone/first name/surname/or email
     searchMember: function (str, cb) {
 
-        var sql = 'SELECT * FROM `member` WHERE (`memberName` LIKE ?) OR (`memberSurname` LIKE ?) O' +
+        var sql = 'SELECT * FROM `member` WHERE (`fname` LIKE ?) OR (`lname` LIKE ?) O' +
                 'R (`email` LIKE ?) OR (`phone` LIKE ?)';
         let values = [
             '%' + str + '%',
