@@ -14,6 +14,7 @@ var multer = require('multer');
 var upload = multer();
 
 const {body, validationResult} = require('express-validator');
+const { default: validator } = require('validator');
 
 const secondLimit = rateLimit({
     windowMs: 1000, // 1 second
@@ -218,26 +219,26 @@ app.post('/creategroup',
                 }
 });
 
-app.post('/scheduleday', (req, res) => {
+app.get('/scheduleday/:date', (req, res) => {
 
-                console.log(req.body.date);
-                console.log(req.body.userID);
-    
-                const errors = validationResult(req);
-                if (!errors.isEmpty()) {
-                    console.log(errors);
-                    return res.status(400).json({errors: errors.array()});
-                }
+    // console.log('in get request')
+    // console.log(req.params)
+    //console.log(req.params.date);
+    // console.log(req.session.userID);
+    var date = new Date(req.params.date);
+    var dateString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000 ))
+                    .toISOString()
+                    .split("T")[0];
 
-                if (req.session.userID) {
+    console.log("date!!")
+    //let selectedDate = validator.toDate(dateString);
+    console.log(dateString)
 
-
-
-                  
-                    event.getMemberEvents(req.session.userID, req.body.date, (result) => {
-                        res.status(200).send(result);
-                    })
-                }else {
-                    //res.sendStatus(500);
-                }
+    if (req.session.userID) {
+        event.getMemberEvents(req.session.userID, dateString, (result) => {
+            res.send(result);
+        })
+    }else {
+        //res.sendStatus(500);
+    }
 });
