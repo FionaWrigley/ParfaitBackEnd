@@ -1,5 +1,6 @@
 const { getGroups } = require('../model/group');
 const group = require('../model/group');
+const groupservice = require('../services/groupservices')
 
 //createGroup: function (groupName, groupDescription, groupPic, userList, cb) {
 const users = [
@@ -27,6 +28,8 @@ const users = [
 //deleteGroupMember(memberID, groupID, cb);
 //acceptGroup(memberID, groupID, cb);
 //getGroupSchedule(groupID, cb);
+
+groupservice.getGroupSchedules(65, logresult)
 
 function logresult(result){
     console.log(result);

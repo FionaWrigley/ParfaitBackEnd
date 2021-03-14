@@ -6,6 +6,7 @@ var bodyParser = require('body-parser');
 const session = require('express-session');
 var cookieParser = require('cookie-parser');
 var member = require('./services/memberservices');
+var groupservice = require('./services/groupservices');
 var group = require('./model/group');
 var event = require('./model/event');
 const rateLimit = require("express-rate-limit");
@@ -45,7 +46,7 @@ app.use(fileUpload());
 app.use(cors({origin: 'http://localhost:3000', credentials: true}));
 app.use(cookieParser());
 app.use(bodyParser.json()); // support json encoded bodies
-app.use(secondLimit, dailyLimit);
+//app.use(secondLimit, dailyLimit);
 app.use(upload.array());
 app.use(express.static('public'));
 
@@ -127,7 +128,6 @@ app.post('/profile',
                     
                     let user = req.body.user;
                     user.userID = req.session.userID;
-                    console.log(user.userID);
                     member.updateProfile(user, (result) => {
                         res.sendStatus(204);
                     })
@@ -138,7 +138,6 @@ app.post('/profile',
 
 app.get('/users/:searchVal', (req, res) => {
     if (req.session.userID) {
-        console.log(req.params.searchVal)
         member.searchMembers(req.params.searchVal, (result) => {
             res.send(result);
         })
@@ -158,7 +157,6 @@ app.post('/register', [
     body('user.password', "Password should contain a minimum of 8 characters, including one upper case lett" +
             "er, one lower case letter, and one number.").isStrongPassword().trim().escape()
 ], (req, res) => {
-    console.log("in register")
     const errors = validationResult(req);
     
     //if posted fields are not valid
@@ -221,21 +219,28 @@ app.post('/creategroup',
 
 app.get('/scheduleday/:date', (req, res) => {
 
-    // console.log('in get request')
-    // console.log(req.params)
-    //console.log(req.params.date);
-    // console.log(req.session.userID);
     var date = new Date(req.params.date);
     var dateString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000 ))
                     .toISOString()
                     .split("T")[0];
 
-    console.log("date!!")
-    //let selectedDate = validator.toDate(dateString);
-    console.log(dateString)
 
     if (req.session.userID) {
         event.getMemberEvents(req.session.userID, dateString, (result) => {
+            res.send(result);
+        })
+    }else {
+        //res.sendStatus(500);
+    }
+});
+
+app.get('/groupschedule/:groupID', (req, res) => {
+
+    console.log("in group schedule")
+    console.log(req.params.groupID);
+
+    if (req.session.userID) {
+        groupservice.getGroupSchedules(req.params.groupID, (result) => {
             res.send(result);
         })
     }else {
