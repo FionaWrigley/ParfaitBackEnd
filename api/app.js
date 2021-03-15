@@ -42,11 +42,14 @@ app.use(session({
         path: "/"
     }
 }))
+
+
 app.use(fileUpload());
 app.use(cors({origin: 'http://localhost:3000', credentials: true}));
 app.use(cookieParser());
 app.use(bodyParser.json()); // support json encoded bodies
-//app.use(secondLimit, dailyLimit);
+app.use(secondLimit, dailyLimit);
+
 app.use(upload.array());
 app.use(express.static('public'));
 
