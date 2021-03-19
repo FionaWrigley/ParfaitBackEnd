@@ -60,10 +60,6 @@ module.exports = {
         console.log('model member update ')
         console.log(user);
 
-        // let hash = crypto
-        //     .createHash('sha1')
-        //     .update(user.password)
-        //     .digest('base64');
         let sql = 'UPDATE `member` SET `fname` = ? , `lname` = ? , `email` = ?, `phone` = ? WHERE memberID = ?';
 
         let values = [

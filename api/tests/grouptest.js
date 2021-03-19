@@ -29,7 +29,7 @@ const users = [
 //acceptGroup(memberID, groupID, cb);
 //getGroupSchedule(groupID, cb);
 
-groupservice.getGroupSchedules(65, logresult)
+groupservice.getGroupSchedules(65, '2021-03-19', 14, 21, logresult)
 
 function logresult(result){
     console.log(result);

@@ -221,17 +221,31 @@ deleteGroupMember: function (memberID, groupID, cb) {
                 });
     },
 
-    getGroupSchedule: function (groupID, cb){
-        //get all events for all users in group from current date to 12 months from now
-        let sql = 'SELECT parfaitgroup.*, member.memberID, member.fname, member.lname, member.profilePic, groupmember.activeFlag, groupmember.adminFlag, eventmember.acceptedFlag, event.* FROM `parfaitgroup` INNER JOIN `groupmember` on groupmember.groupID = parfaitgroup.groupID INNER JOIN `member` ON member.memberID = groupmember.memberID LEFT JOIN `eventmember` ON member.memberID = eventmember.memberID LEFT JOIN event ON eventmember.eventID = event.eventID WHERE parfaitgroup.groupID =' + groupID;
-        //let sql = 'SELECT parfaitgroup.groupID, parfaitgroup.groupName, parfaitgroup.groupDescription, parfaitgroup.groupPic, member.memberID, member.fname, member.lname, member.profilePic, groupmember.activeFlag, groupmember.adminFlag, eventmember.acceptedFlag, event.startDate, event.endDate, event.eventName, event.eventDescription, event.startTime, event.endTime, event.repeatFrequency, event.repeatUntil FROM `parfaitgroup` INNER JOIN `groupmember` on groupmember.groupID = parfaitgroup.groupID INNER JOIN `member` ON member.memberID = groupmember.memberID LEFT JOIN `eventmember` ON member.memberID = eventmember.memberID LEFT JOIN event ON eventmember.eventID = event.eventID WHERE parfaitgroup.groupID =' + groupID;
+    getGroupSchedule: function (groupID, minDate, maxDate, userID, cb){
+
+        //check the user is in the group ergo can retrieve group records
+        let sql = 'SELECT * FROM `groupmember` WHERE memberID = '+ userID+' AND groupID = '+ groupID;
 
         pool.query(sql, (error, results) => {
-            if (error) 
+            if (error)
                 throw error;
 
-                console.log(results)
-            return cb(results);
-        }) 
+            if(results.length > 0){//user is a group member 
+            //get all events for all users in group from min date to max date
+            sql = 'SELECT parfaitgroup.*, member.memberID, member.fname, member.lname, member.profilePic, groupmember.activeFlag, groupmember.adminFlag, eventmember.acceptedFlag, event.* FROM `parfaitgroup` INNER JOIN `groupmember` on groupmember.groupID = parfaitgroup.groupID INNER JOIN `member` ON member.memberID = groupmember.memberID LEFT JOIN `eventmember` ON member.memberID = eventmember.memberID LEFT JOIN event ON eventmember.eventID = event.eventID WHERE parfaitgroup.groupID =' + groupID 
+            + ' AND (event.startDate BETWEEN "'+ minDate + '" AND "'+ maxDate
+            + '" OR event.endDate BETWEEN "'+ minDate + '" AND "'+ maxDate
+            + '" OR (event.startDate < "'+ minDate + '" AND event.endDate > "'+maxDate+'"))';  
+
+            pool.query(sql, (error, results) => {
+                if (error) 
+                    throw error; 
+
+                return cb(results);
+            }) 
+            }else{//user is not in group and should not get schedule data
+                cb([]);
+            }  
+        })
     }
 }
