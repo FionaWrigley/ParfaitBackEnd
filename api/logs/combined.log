@@ -1,0 +1,25 @@
+{"level":"warn","message":"1616397902301 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616397911396 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616397973182 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616405762831 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616405893164 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616405994127 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616406029751 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616412642302 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616412694637 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616412784081 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616412798927 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616412870030 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616412875823 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616412888331 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616412956935 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"warn","message":"1616412987871 - Failed login attempt - IP: ::1 Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"info","message":"1616413132558 - Successful login - IP: ::1, session: q8GHZr_WmM3gRVR588Bt9HSQ7-UdqE3p, MemberID: 21, userType: Member, Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"info","message":"1616419132160 - Successful login - IP: ::1, session: zpAd84NDyWqv6-sdVYH1RHBbgkwJn0zj, MemberID: 21, userType: Member, Email: fionaholt@hotmail.com","service":"user-service"}
+{"level":"info","message":"1616419132756 - get groups - IP: ::1, session: zpAd84NDyWqv6-sdVYH1RHBbgkwJn0zj, MemberID: 21, userType: Member","service":"user-service"}
+{"level":"info","message":"1616419132814 - get profile pic - IP: ::1, session: zpAd84NDyWqv6-sdVYH1RHBbgkwJn0zj, MemberID: 21, userType: Member","service":"user-service"}
+{"level":"info","message":"1616419142162 - get profile - IP: ::1, session: zpAd84NDyWqv6-sdVYH1RHBbgkwJn0zj, MemberID: 21, userType: Member","service":"user-service"}
+{"level":"info","message":"1616419142218 - get profile - IP: ::1, session: zpAd84NDyWqv6-sdVYH1RHBbgkwJn0zj, MemberID: 21, userType: Member","service":"user-service"}
+{"level":"info","message":"1616419181865 - update profile - IP: ::1, session: zpAd84NDyWqv6-sdVYH1RHBbgkwJn0zj, MemberID: 21, userType: Member","service":"user-service"}
+{"level":"warn","message":"1616424465553 - Failed login attempt, invalid user name or password - IP: ::1 Email: undefined","service":"user-service"}
+{"level":"warn","message":"1616425954370 - Failed login attempt, invalid user name or password - IP: ::1 Email: @","service":"user-service"}

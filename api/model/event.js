@@ -6,7 +6,7 @@ module.exports = {
 
     //add an event
     createEvent: function (startDate, startTime, endDate, endTime, eventName, eventDesc, repeatFrequency, repeatUntil, groupID, memberID, acceptedFlag, cb) {
-        var sql = 'INSERT INTO `event`(`startDate`, `startTime`, `endDate`, `endTime`, `eventName`,`eventDescription`, `repeatFrequency`, `repeatUntil`, `groupID`) VALUES (?)';
+        let sql = 'INSERT INTO `event`(`startDate`, `startTime`, `endDate`, `endTime`, `eventName`,`eventDescription`, `repeatFrequency`, `repeatUntil`, `groupID`) VALUES (?)';
 
         let values = [
             startDate,
@@ -61,13 +61,13 @@ module.exports = {
 
     deleteEvent: function (eventID, cb) {
         //delete event for all members
-        var sql = 'DELETE FROM `eventmember` WHERE `eventID` ='+eventID;
+        let sql = 'DELETE FROM `eventmember` WHERE `eventID` = ?';
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
                     throw err;
                 }
-                connection.query(sql, (err, results) => {
+                connection.query(sql, eventID, (err, results) => {
                     if (err) {
                         return connection.rollback(() => {
                             connection.release();
@@ -75,9 +75,9 @@ module.exports = {
                         });
                     }
 
-                    sql = 'DELETE FROM `event` WHERE `eventID` ='+eventID;
+                    sql = 'DELETE FROM `event` WHERE `eventID` = ?';
 
-                    connection.query(sql, (error, results2) => {
+                    connection.query(sql, eventID, (error, results2) => {
                         if (error) {
                             return connection.rollback(() => {
                                 connection.release();
@@ -104,23 +104,28 @@ module.exports = {
     //delete member from event, if no other members share event - delete event.
     deleteMemberEvent: function (eventID, memberID, cb) {
   
-        var sql = 'DELETE FROM `eventmember` WHERE `eventID` ='+eventID+ ' AND `memberID` = '+memberID;
+        let sql = 'DELETE FROM `eventmember` WHERE `eventID` = ? AND `memberID` = ?';
+        let values = [
+            eventID,
+            memberID
+        ]
 
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
                     throw err;
                 }
-                connection.query(sql, (err, results) => {
+                connection.query(sql, values, (err, results) => {
                     if (err) {
                         return connection.rollback(() => {
                             connection.release();
                             throw err;
                         });
                     }
-                    sql = 'DELETE FROM `event` WHERE `eventID` ='+eventID+' AND `groupID` = 0';
+                    sql = 'DELETE FROM `event` WHERE `eventID` = ? AND `groupID` = 0';
 
-                    connection.query(sql, (error, results) => {
+
+                    connection.query(sql, eventID, (error, results) => {
                         if (error) {
                             return connection.rollback(() => {
                                 connection.release();
@@ -187,7 +192,13 @@ module.exports = {
     //get events for a member for a specific date
     getMemberEvents: function (memberID, dateSelected, cb) {
         
-        pool.query('SELECT * FROM `event` INNER JOIN `eventmember` where event.eventID = eventmember.eventID AND eventmember.memberID = "' + memberID + '" AND ("'+dateSelected+'" BETWEEN event.startDate AND event.endDate) ORDER BY event.startTime DESC' , function (err, results) {
+        let sql = 'SELECT * FROM `event` INNER JOIN `eventmember` where event.eventID = eventmember.eventID AND eventmember.memberID = ? AND (? BETWEEN event.startDate AND event.endDate) ORDER BY event.startTime DESC';
+        let values = [
+            memberID,
+            dateSelected
+        ];
+
+        pool.query(sql, values, function (err, results) { 
             if (err) 
                 throw err;
             console.log(results);

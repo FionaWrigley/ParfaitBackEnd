@@ -4,25 +4,29 @@ const group = require('../model/group');
 var crypto = require('crypto');
 var validator = require('validator');
 
-
 module.exports = {
 
     login: function (email, password, cb) {
         member
             .getMemberIDPassword(email, function (results) {
 
-                if (results.length > 0) {
+          
+                if (results) {
+                    console.log('password ', results.password);
                     let hash = crypto
                         .createHash('sha1')
                         .update(password)
                         .digest('base64');
-                    if (results[0].password == hash) {
-                            return cb(results[0].memberID); 
+
+                    if (results.password == hash) {
+
+                            return cb(results); 
                     }else{ return cb(0);}
-                }else{ return cb(0);}
+                }else{ 
+                    console.log('results.length ', results.length)
+                    return cb(0);}
             });
     },
-
     register: function (user, cb) {
 
         member
@@ -72,19 +76,19 @@ module.exports = {
             );
     },
 
-    updatePic: function (id, image, cb) {
+    updatePic: function (id, pic, cb) {
 
         console.log("in update pic member service");
         //console.log(image);
-        // member
-        //     .updatePic(id, function (results) {
+        member
+             .updateProfilePic(id, pic, function (results) {
 
         //         console.log("get member")
         //         console.log(results);
         //        return cb(results); 
                     
-        //             }
-        //     );
+                     }
+             );
     }
 
     // auth: function (passwords, password){     console.log("in auth func");     if

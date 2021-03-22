@@ -5,21 +5,22 @@ var pool = mysql.createPool(_db);
 
 module.exports = {
 
-    //get user id and password for an email address
     getMemberIDPassword: function (email, cb) {
-       
-        pool.query('SELECT `memberID`, `password` FROM `member` where email = "' + email + '"', function (err, results, fields) {
+       let sql = 'SELECT `memberID`, `password`, `userType` FROM `member` where email = ?'
+
+    pool.query(sql, email, function (err, results, fields) {
             if (err) 
                 throw err;
-            console.log(results);
-            return cb(results);
+            return cb(results[0]);
         })
     },
 
     //check if email already exists
     memberExists: function (email, cb) {
 
-        pool.query('SELECT * FROM `member` where email = "' + email + '"', function (err, results, fields) {
+        let sql = 'SELECT * FROM `member` where email = ?';
+
+        pool.query(sql, email, function (err, results, fields) {
             if (err) 
                 throw err;
             if (results.length > 0) {
@@ -82,7 +83,10 @@ module.exports = {
 
     //get member details for a specific member ID
     getMember: function (id, cb) {
-        pool.query('SELECT * FROM `member` where memberID = "' + id + '"', function (err, results, fields) {
+
+        let sql = 'SELECT * FROM `member` where memberID = ?';
+
+        pool.query(sql, id, function (err, results, fields) {
             if (err) 
                 throw err;
             if (results.length > 0) {
@@ -112,7 +116,9 @@ module.exports = {
 
     //get member profile pic
     getProfilePic: function (id, cb) {
-        pool.query('SELECT profilePic FROM `member` where memberID = "' + id + '"', function (err, results, fields) {
+
+        let sql = 'SELECT profilePic FROM `member` where memberID = ?'
+        pool.query(sql, id, function (err, results, fields) {
             if (err) 
                 throw err;
             
@@ -122,5 +128,18 @@ module.exports = {
 
     //update profile pic - blob
     updateProfilePic: function (id, pic, cb) {
+
+        let sql = 'UPDATE `member` SET `profilePicPath` = ? WHERE memberID = ?';
+        
+        let values = [
+            pic,
+            id
+        ];
+        
+        pool.query(sql, values, function (err, result) {
+            if (err) 
+                throw err;
+            cb(result);
+        });
     }
 }

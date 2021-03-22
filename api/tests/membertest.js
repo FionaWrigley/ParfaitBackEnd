@@ -21,8 +21,9 @@ const newmember = {
 
 //user.createMember(newmember, logresult);
 //user.updateMember(newmember, logresult);
-//user.getMember(8, logresult);
+user.getMember(8, logresult);
 
+//user.getMemberIDPassword('fionaholt@hotmail.com', logresult);
 //user.searchMember("0411", logresult);
 
 function logresult(result){

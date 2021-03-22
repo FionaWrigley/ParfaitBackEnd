@@ -6,8 +6,11 @@ module.exports = {
 
     //get list of groups for a specific member
     getGroups: function (memberID, cb) {
-        pool.query('SELECT * FROM `parfaitgroup` INNER JOIN `groupmember` ON parfaitgroup.groupID = ' +
-                    'groupmember.groupID where groupmember.memberID = "' + memberID + '"', function (err, results, fields) {
+
+        let sql = 'SELECT * FROM `parfaitgroup` INNER JOIN `groupmember` ON parfaitgroup.groupID = ' +
+        'groupmember.groupID where groupmember.memberID = ?';
+
+        pool.query(sql, memberID, function (err, results, fields) {
                 if (err) 
                     throw err;
                 return cb(results);
@@ -24,7 +27,6 @@ module.exports = {
         var sql = 'INSERT INTO `parfaitgroup`(`groupName`, `groupDescription`, `groupPic`) VALUES (' +
                 '?)';
         
-
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
@@ -81,14 +83,14 @@ module.exports = {
 
     deleteGroup: function (groupID, cb) {
  
-        var sql = 'DELETE FROM `groupmember` WHERE `groupID` ='+groupID;
+        var sql = 'DELETE FROM `groupmember` WHERE `groupID` =?';
 
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
                     throw err;
                 }
-                connection.query(sql, (err, results) => {
+                connection.query(sql, groupID, (err, results) => {
                     if (err) {
                         return connection.rollback(() => {
                             connection.release();
@@ -96,9 +98,9 @@ module.exports = {
                         });
                     }
 
-                    sql = 'DELETE FROM `parfaitgroup` WHERE `groupID` ='+groupID;
+                    sql = 'DELETE FROM `parfaitgroup` WHERE `groupID` = ?';
 
-                    connection.query(sql, (error, results2) => {
+                    connection.query(sql, groupID, (error, results2) => {
                         if (error) {
                             return connection.rollback(() => {
                                 connection.release();
@@ -151,9 +153,9 @@ deleteGroupMember: function (memberID, groupID, cb) {
                         }
 
                         //check if any other group members exist
-                        sql = 'SELECT COUNT(groupID) from `groupMember` WHERE groupID = ' + groupID;
+                        sql = 'SELECT COUNT(groupID) from `groupMember` WHERE groupID = ?';
                         
-                        connection.query(sql, (error, results) => {
+                        connection.query(sql, groupID, (error, results) => {
                             if (error) 
                             {
                                 return connection.rollback(() => {
@@ -165,8 +167,8 @@ deleteGroupMember: function (memberID, groupID, cb) {
                             //if no other group members exist - delete group
                             if(results < 1){
 
-                                sql = 'DELETE FROM `parfaitgroup` WHERE groupID = ' + groupID;
-                                connection.query(sql, (error, results) => {
+                                sql = 'DELETE FROM `parfaitgroup` WHERE groupID = ?';
+                                connection.query(sql, groupID, (error, results) => {
                                     if (error) {
                                         return connection.rollback(() => {
                                             connection.release();
@@ -224,20 +226,37 @@ deleteGroupMember: function (memberID, groupID, cb) {
     getGroupSchedule: function (groupID, minDate, maxDate, userID, cb){
 
         //check the user is in the group ergo can retrieve group records
-        let sql = 'SELECT * FROM `groupmember` WHERE memberID = '+ userID+' AND groupID = '+ groupID;
-
-        pool.query(sql, (error, results) => {
+        let sql = 'SELECT * FROM `groupmember` WHERE memberID = ? AND groupID = ?';
+        let values = [
+            userID,
+            groupID
+        ]
+        pool.query(sql, values, (error, results) => {
             if (error)
                 throw error;
 
             if(results.length > 0){//user is a group member 
             //get all events for all users in group from min date to max date
-            sql = 'SELECT parfaitgroup.*, member.memberID, member.fname, member.lname, member.profilePic, groupmember.activeFlag, groupmember.adminFlag, eventmember.acceptedFlag, event.* FROM `parfaitgroup` INNER JOIN `groupmember` on groupmember.groupID = parfaitgroup.groupID INNER JOIN `member` ON member.memberID = groupmember.memberID LEFT JOIN `eventmember` ON member.memberID = eventmember.memberID LEFT JOIN event ON eventmember.eventID = event.eventID WHERE parfaitgroup.groupID =' + groupID 
-            + ' AND (event.startDate BETWEEN "'+ minDate + '" AND "'+ maxDate
-            + '" OR event.endDate BETWEEN "'+ minDate + '" AND "'+ maxDate
-            + '" OR (event.startDate < "'+ minDate + '" AND event.endDate > "'+maxDate+'"))';  
+            sql = 'SELECT parfaitgroup.*, member.memberID, member.fname, member.lname, member.profilePic, groupmember.activeFlag, groupmember.adminFlag, eventmember.acceptedFlag, event.*'
+            + ' FROM `parfaitgroup` INNER JOIN `groupmember` ON groupmember.groupID = parfaitgroup.groupID '
+            + ' INNER JOIN `member` ON member.memberID = groupmember.memberID '
+            + ' LEFT JOIN `eventmember` ON member.memberID = eventmember.memberID '
+            + ' LEFT JOIN event ON eventmember.eventID = event.eventID' 
+            + ' WHERE parfaitgroup.groupID = ? AND (event.startDate BETWEEN ? AND ?'
+            + ' OR event.endDate BETWEEN ?  AND ?'
+            + ' OR (event.startDate < ? AND event.endDate > ?))';   
 
-            pool.query(sql, (error, results) => {
+            values = [
+                groupID,
+                minDate,
+                maxDate,
+                minDate,
+                maxDate,
+                minDate,
+                maxDate
+            ]
+
+            pool.query(sql, values, (error, results) => {
                 if (error) 
                     throw error; 
 
