@@ -4,14 +4,14 @@ var crypto = require('crypto');
 var pool = mysql.createPool(_db);
 
 module.exports = {
-
     getMemberIDPassword: function (email, cb) {
        let sql = 'SELECT `memberID`, `password`, `userType` FROM `member` where email = ?'
 
     pool.query(sql, email, function (err, results, fields) {
             if (err) 
                 throw err;
-            return cb(results[0]);
+
+            return cb(results);
         })
     },
 
@@ -31,20 +31,21 @@ module.exports = {
     },
 
     //create a new member with hashed password
-    createMember: function (fname, lname, email, phone, password, cb) {
+    createMember: function (user, cb) {
 
-        var sql = 'INSERT INTO `member`(`fname`, `lname`, `email`, `phone`, `password`' +
+        var sql = 'INSERT INTO `member`(`fname`, `lname`, `email`, `phone`, `password`, `userType`' +
                 ') VALUES (?)';
         let hash = crypto
             .createHash('sha1')
-            .update(password)
+            .update(user.password)
             .digest('base64');
 
         let values = [
-            fname,
-            lname,
-            email,
-            phone,
+            user.fname,
+            user.lname,
+            user.email,
+            user.phone,
+            user.userType,
             hash
         ];
 
@@ -97,15 +98,16 @@ module.exports = {
     },
 
     //search member on phone/first name/surname/or email
-    searchMember: function (str, cb) {
+    searchMembers: function (str, userID, cb) {
 
-        var sql = 'SELECT * FROM `member` WHERE (`fname` LIKE ?) OR (`lname` LIKE ?) O' +
-                'R (`email` LIKE ?) OR (`phone` LIKE ?)';
+        var sql = 'SELECT * FROM `member` WHERE ((`fname` LIKE ?) OR (`lname` LIKE ?) O' +
+                'R (`email` LIKE ?) OR (`phone` LIKE ?)) AND memberID NOT IN (?)';
         let values = [
             '%' + str + '%',
             '%' + str + '%',
             '%' + str + '%',
-            '%' + str + '%'
+            '%' + str + '%',
+            userID
         ];
         pool.query(sql, values, function (err, result) {
             if (err) 

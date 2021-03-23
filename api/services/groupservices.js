@@ -4,25 +4,6 @@ const datefns = require('date-fns');
 
  module.exports = {
 
-
-
-
-// createGroup: function (groupArray, cb) {
-
-//     console.log("group services new group");
-
-//     groupArray[member.map((Element, index) => {
-        
-//     })
-
-//     member
-//         .updateMember(user, function (results) {
-
-//            return cb(results);             
-//                 }
-//         )
-//     }
-
 ////////////////////////////////////////////////////////////////////////////////
 //Change the format of the data from a flat file to an object with nested arrays 
 // group->group members->group member events
@@ -57,12 +38,12 @@ const datefns = require('date-fns');
         }
     cb(groupSched);
     })
-
    },
 
 ////////////////////////////////////////////////////////////////////////////////
 //Change the format of the data from a flat file to an object with nested arrays 
-// group->group members->hour->event
+// group->group members->day->event
+//Generate a new record for each day for events that span multiple days
 ///////////////////////////////////////////////////////////////////////////////
 getGroupSchedules: function (gID, minDateStr, numberOfDays, userID, cb){
 
@@ -100,7 +81,6 @@ getGroupSchedules: function (gID, minDateStr, numberOfDays, userID, cb){
 
             let startDate = new Date(result[i].startDate);
             let endDate = new Date(result[i].endDate);
-            
             //event runs over multiple days but starts before selected date.
             //Ignore anything before 00:00 on selected date
             if (datefns.isBefore(startDate, minDate)){

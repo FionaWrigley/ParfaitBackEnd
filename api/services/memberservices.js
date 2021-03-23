@@ -7,26 +7,32 @@ var validator = require('validator');
 module.exports = {
 
     login: function (email, password, cb) {
-        member
-            .getMemberIDPassword(email, function (results) {
+      
+            member
+            .getMemberIDPassword(email, (results) => {
+                console.log('results ',results[0]);
 
-          
-                if (results) {
-                    console.log('password ', results.password);
+                if (results.length > 0) {
+                    console.log('in here')
                     let hash = crypto
                         .createHash('sha1')
                         .update(password)
                         .digest('base64');
 
-                    if (results.password == hash) {
+                        console.log('hash ',hash);
+                        console.log('results.password ' + results[0].password)
 
-                            return cb(results); 
-                    }else{ return cb(0);}
-                }else{ 
-                    console.log('results.length ', results.length)
-                    return cb(0);}
+                    if (results[0].password == hash) {
+                            return cb(results[0]); 
+                    }else{
+                        return cb(401);
+                    }
+                }else{
+                    return cb(401);
+                } 
             });
     },
+
     register: function (user, cb) {
 
         member
@@ -38,14 +44,13 @@ module.exports = {
                 }else{ return cb(0);}
             });
     },
+    // searchMembers: function (searchTerm, cb) {
 
-    searchMembers: function (searchTerm, cb) {
+    //     member.searchMembers(searchTerm, function (results) {
+    //         return cb(results);
 
-        member.searchMember(searchTerm, function (results) {
-            return cb(results);
-
-            })
-    },
+    //         })
+    // },
 
     getProfilePic: function (id, cb) {
 
@@ -56,25 +61,25 @@ module.exports = {
             );
     },
 
-    getProfile: function (id, cb) {
-        member
-            .getMember(id, function (results) {
+    // getProfile: function (id, cb) {
+    //     member
+    //         .getMember(id, function (results) {
 
-               return cb(results);             
-                    }
-            );
-    },  
+    //            return cb(results);             
+    //                 }
+    //         );
+    // },  
 
-    updateProfile: function (user, cb) {
+    // updateProfile: function (user, cb) {
 
-        console.log("member services update");
-        member
-            .updateMember(user, function (results) {
+    //     console.log("member services update");
+    //     member
+    //         .updateMember(user, function (results) {
 
-               return cb(results);             
-                    }
-            );
-    },
+    //            return cb(results);             
+    //                 }
+    //         );
+    // },
 
     updatePic: function (id, pic, cb) {
 

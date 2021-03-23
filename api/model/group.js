@@ -13,19 +13,19 @@ module.exports = {
         pool.query(sql, memberID, function (err, results, fields) {
                 if (err) 
                     throw err;
+
                 return cb(results);
             })
     },
 
     //create a new group including update of group members table
-   // createGroup: function (groupName, groupDescription, groupPic, userList, cb) {
+    // createGroup: function (groupName, groupDescription, groupPic, userList, cb) {
     createGroup: function (group, userID, cb) {
 
         let userList = group.members;
         let values = [group.name, group.description, null];
 
-        var sql = 'INSERT INTO `parfaitgroup`(`groupName`, `groupDescription`, `groupPic`) VALUES (' +
-                '?)';
+        var sql = 'INSERT INTO `parfaitgroup`(`groupName`, `groupDescription`, `groupPic`) VALUES (?)';
         
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
@@ -41,11 +41,9 @@ module.exports = {
                     }
                     let groupID = results.insertId;
                     let records = []; 
+                
+                    sql = 'INSERT INTO `groupmember`(`groupID`, `memberID`, `activeFlag`, `adminFlag`) VALUES ?';
 
-                    sql = 'INSERT INTO `groupmember`(`groupID`, `memberID`, `activeFlag`, `adminFlag`) VALU' +
-                            'ES ?';
-
-                     
                     //generate groupmember records
                     for (i = 0; i < userList.length; i++) {
                         records.push([groupID, userList[i].memberID, true, false]);
@@ -60,7 +58,8 @@ module.exports = {
                                 throw error;
                             });
                         }
-                        connection.commit(function (err) {
+
+                        connection.commit(function (err) { //all queries were successful
                                 if (err) {
                                     return connection.rollback(function () {
                                         connection.release();
