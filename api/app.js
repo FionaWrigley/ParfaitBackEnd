@@ -399,18 +399,20 @@ app.get('/scheduleday/:date', scheduleDayValidationRules(), (req, res) => {
     }
 });
 
-///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 //get group schedules for selected group of logged in user for given duration
+///////////////////////////////////////////////////////////////////////////////////////////////
 app.get('/groupschedule/:groupID/:currDate/:numberOfDays', groupSchedValidationRules(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
     const timeStamp = Date.now(); //current UTC timestamp in ms
+    
     const errors = validationResult(req);
      
-    if (!errors.isEmpty()) {
+    if (!errors.isEmpty()) { //validation errors
          logger.log({
              level: 'warn',
-             message: `${timeStamp} - Failed schedule day retreival, 422 Invalid input ${errors} - IP: ${ip}`
+             message: `${timeStamp} - Failed group schedule retreival, 422 Invalid input ${errors} - IP: ${ip}`
            });
          return res.status(422).json({errors: errors.array()});
      }
@@ -443,10 +445,14 @@ app.post('/profilepic', (req, res, next) => {
     if (req.session.userID) { //user is authorized     
         next()
     }else{
+        logger.log({ 
+            level: 'warn',
+            message: `${timeStamp} - Unathorised to update profile pic, 401 IP: ${ip}`
+          });
         res.sendStatus(401); //not authorized
     }
 },
-upload.single('profilePic'),
+upload.single('profilePic'), //get file (Multer function)
     function (req, res, next) {
 
         memberService.updatePic(req.session.userID, req.file.path, (result) => {
@@ -455,15 +461,12 @@ upload.single('profilePic'),
                 message: `${timeStamp} - update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
               });
             res.sendStatus(204); //success
-            logger.log({ //unathorised
-                level: 'warn',
-                message: `${timeStamp} - Unathorized to get schedule, 401 IP: ${ip}`
-              });
         })
 })
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////
 //get profile picture for authorized user
+///////////////////////////////////////////////////////////////////////////////////////////////////
 app.get('/profilePic', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
@@ -478,8 +481,12 @@ app.get('/profilePic', (req, res) => {
               });
             res.send(result[0].profilePic);
         })
-    }else{
-        res.sendStatus(401); //not authorized
+    }else{ //not authorized
+        logger.log({ 
+            level: 'warn',
+            message: `${timeStamp} - Unathorised to get profile pic, 401 IP: ${ip}`
+          });
+        res.sendStatus(401); 
     }
 });
 
