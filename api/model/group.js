@@ -1,6 +1,7 @@
 var mysql = require('mysql');
 var _db = require('./dbconfig');
 var pool = mysql.createPool(_db);
+const {logger} = require('../services/logger');
 
 module.exports = {
 
@@ -10,10 +11,14 @@ module.exports = {
         let sql = 'SELECT * FROM `parfaitgroup` INNER JOIN `groupmember` ON parfaitgroup.groupID = ' +
         'groupmember.groupID where groupmember.memberID = ?';
 
-        pool.query(sql, memberID, function (err, results, fields) {
-                if (err) 
+        pool.query(sql, memberID, function (err, results) {
+                if (err) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to select from group, getGroups, sql: ${sql}, values: ${memberID} error: ${err}`
+                      });
                     throw err;
-
+                }
                 return cb(results);
             })
     },
@@ -30,11 +35,19 @@ module.exports = {
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to create connection, createGroup, error: ${err}`
+                      });
                     throw err;
                 }
                 connection.query(sql, [values], (err, results) => {
                     if (err) {
                         return connection.rollback(() => {
+                            logger.log({
+                                level: 'error',
+                                message: `Failed to insert into parfaitgroup, createGroup, sql: ${sql}, values: ${values} error: ${err}`
+                              });
                             connection.release();
                             throw err;
                         });
@@ -54,6 +67,10 @@ module.exports = {
                     connection.query(sql, [records], (error, results2) => {
                         if (error) {
                             return connection.rollback(() => {
+                                logger.log({
+                                    level: 'error',
+                                    message: `Failed to insert into groupmember, createGroup, sql: ${sql}, values: ${records} error: ${err}`
+                                  });
                                 connection.release();
                                 throw error;
                             });
@@ -62,6 +79,10 @@ module.exports = {
                         connection.commit(function (err) { //all queries were successful
                                 if (err) {
                                     return connection.rollback(function () {
+                                        logger.log({
+                                            level: 'error',
+                                            message: `Failed to commit, createGroup, error: ${err}`
+                                          });
                                         connection.release();
                                         throw err;
                                     });
@@ -87,11 +108,19 @@ module.exports = {
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to create connection, deleteGroup, error: ${err}`
+                      });
                     throw err;
                 }
                 connection.query(sql, groupID, (err, results) => {
                     if (err) {
                         return connection.rollback(() => {
+                            logger.log({
+                                level: 'error',
+                                message: `Failed to delete from groupmember, deleteGroup, sql: ${sql}, values: ${groupID} error: ${err}`
+                              });
                             connection.release();
                             throw err;
                         });
@@ -102,6 +131,10 @@ module.exports = {
                     connection.query(sql, groupID, (error, results2) => {
                         if (error) {
                             return connection.rollback(() => {
+                                logger.log({
+                                    level: 'error',
+                                    message: `Failed to delete from parfaitgroup, deleteGroup, sql: ${sql}, values: ${groupID} error: ${err}`
+                                  });
                                 connection.release();
                                 throw error;
                             });
@@ -110,6 +143,10 @@ module.exports = {
                             .commit((err) => {
                                 if (err) {
                                     return connection.rollback(() => {
+                                        logger.log({
+                                            level: 'error',
+                                            message: `Failed to commit, deleteGroup, error: ${err}`
+                                          });
                                         connection.release();
                                         throw err;
                                     });
@@ -140,12 +177,20 @@ deleteGroupMember: function (memberID, groupID, cb) {
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to create connection, deleteGroupMember, error: ${err}`
+                      });
                      throw err;
                     }
                 
                     connection.query(sql, values, (error, results) => {
                         if (error) {
                             return connection.rollback(() => {
+                                logger.log({
+                                    level: 'error',
+                                    message: `Failed to delete from groupmember, deleteGroupMember, sql: ${sql}, values: ${values} error: ${err}`
+                                  });
                                 connection.release();
                                 throw error;
                             });
@@ -158,6 +203,10 @@ deleteGroupMember: function (memberID, groupID, cb) {
                             if (error) 
                             {
                                 return connection.rollback(() => {
+                                    logger.log({
+                                        level: 'error',
+                                        message: `Failed to select from groupmember, deleteGroupMember, sql: ${sql}, values: ${groupID} error: ${err}`
+                                      });
                                     connection.release();
                                     throw error;
                                 });
@@ -170,6 +219,10 @@ deleteGroupMember: function (memberID, groupID, cb) {
                                 connection.query(sql, groupID, (error, results) => {
                                     if (error) {
                                         return connection.rollback(() => {
+                                            logger.log({
+                                                level: 'error',
+                                                message: `Failed to delete from parfaitgroup, deleteGroupMember, sql: ${sql}, values: ${groupID} error: ${err}`
+                                              });
                                             connection.release();
                                             throw error;
                                         });
@@ -178,6 +231,10 @@ deleteGroupMember: function (memberID, groupID, cb) {
                                     .commit((err) => {
                                         if (err) {
                                             return connection.rollback(() => {
+                                                logger.log({
+                                                    level: 'error',
+                                                    message: `Failed to commit, deleteGroupMember, error: ${err}`
+                                                  });
                                                 connection.release();
                                                 throw err;
                                             });
@@ -192,6 +249,10 @@ deleteGroupMember: function (memberID, groupID, cb) {
                                 .commit((err) => {
                                     if (err) {
                                         return connection.rollback(() => {
+                                            logger.log({
+                                                level: 'error',
+                                                message: `Failed to commit, deleteGroupMember, error: ${err}`
+                                              });
                                             connection.release();
                                             throw err;
                                         });
@@ -216,8 +277,13 @@ deleteGroupMember: function (memberID, groupID, cb) {
                 ];
         
                 pool.query(sql, values, function (err, result) {
-                    if (err) 
+                    if (err) {
+                        logger.log({
+                            level: 'error',
+                            message: `Failed to update groupmember, acceptGroup, sql: ${sql}, values: ${values} error: ${err}`
+                          });
                         throw err;
+                    }
                     cb(result.insertId);
                 });
     },
@@ -231,8 +297,13 @@ deleteGroupMember: function (memberID, groupID, cb) {
             groupID
         ]
         pool.query(sql, values, (error, results) => {
-            if (error)
+            if (error){
+                logger.log({
+                    level: 'error',
+                    message: `Failed to select from groupmember, getGroupSchedule, sql: ${sql}, values: ${values} error: ${err}`
+                  });
                 throw error;
+            }
 
             if(results.length > 0){//user is a group member 
             //get all events for all users in group from min date to max date
@@ -256,9 +327,13 @@ deleteGroupMember: function (memberID, groupID, cb) {
             ]
 
             pool.query(sql, values, (error, results) => {
-                if (error) 
+                if (error) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to get group schedules, getGroupSchedule, sql: ${sql}, values: ${values} error: ${err}`
+                      });
                     throw error; 
-
+                }
                 return cb(results);
             }) 
             }else{//user is not in group and should not get schedule data

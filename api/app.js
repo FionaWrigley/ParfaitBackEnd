@@ -12,7 +12,7 @@ const member = require('./model/member');
 const event = require('./model/event');
 const path = require('path');
 const rateLimit = require("express-rate-limit");
-const winston = require('winston');
+const {logger} = require('./services/logger');
 const multer = require('multer');
 const {body, params, validationResult} = require('express-validator');
 const { default: validator } = require('validator');
@@ -34,21 +34,7 @@ const storage = multer.diskStorage({
 
     }
 });
-
 const upload = multer({storage: storage});
-
-//create logger
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  defaultMeta: { service: 'user-service' },
-  transports: [
-    // Write all logs with level `error` and below to `error.log`
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    // Write all logs with level `info` and below to `combined.log`
-    new winston.transports.File({ filename: 'logs/combined.log' }),
-  ],
-});
 
 //set up rate limits
 const secondLimit = rateLimit({
@@ -98,7 +84,6 @@ app.listen(port, () => console.log(`Parfait listening on port ${port}!`));
 app.post('/login', loginValidationRules(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-    const timeStamp = Date.now(); //current UTC timestamp in ms
        
     //if fields are empty
     const errors = validationResult(req);
@@ -106,7 +91,7 @@ app.post('/login', loginValidationRules(), (req, res) => {
        
         logger.log({
             level: 'warn',
-            message: `${timeStamp} - Failed login attempt, 422 Invalid user name or password - IP: ${ip} Email: ${req.body.user.email}`
+            message: `Failed login attempt, 422 Invalid user name or password - IP: ${ip} Email: ${req.body.user.email}`
           });
 
         return res
@@ -124,20 +109,20 @@ app.post('/login', loginValidationRules(), (req, res) => {
 
             logger.log({
                 level: 'info',
-                message: `${timeStamp} - Successful login, 204- IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, Email: ${req.body.user.email}`
+                message: `Successful login, 204- IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, Email: ${req.body.user.email}`
               });
             res.sendStatus(204); //return success - no content
         }else if(result === 401){ //authentication failure
                 logger.log({
                     level: 'warn',
-                    message: `${timeStamp} - Failed login attempt, 401 - IP: ${ip} Email: ${req.body.user.email}`
+                    message: `Failed login attempt, 401 - IP: ${ip} Email: ${req.body.user.email}`
                 });
             res.sendStatus('401'); //not authorized
         }else{
             
             logger.log({
             level: 'Error',
-            message: `${timeStamp} - Login attempt, 500 - ERR: ${result}, IP: ${ip} Email: ${req.body.user.email}`
+            message: `Login attempt, 500 - ERR: ${result}, IP: ${ip} Email: ${req.body.user.email}`
         });
         res.send(500); //an error has occured in execution
         }
@@ -150,21 +135,20 @@ app.post('/login', loginValidationRules(), (req, res) => {
 app.get('/groups', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-    const timeStamp = Date.now(); //current UTC timestamp in ms
 
     if (req.session.userID) { //user is authorized
         group.getGroups(req.session.userID, (result) => {
 
             logger.log({
                 level: 'info',
-                message: `${timeStamp} - get groups - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
+                message: `Get groups - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
               });
             res.send(result); //send group list
         })
     } else {
         logger.log({
             level: 'warn',
-            message: `${timeStamp} - Unathorized access attempt - get groups - IP: ${ip}`
+            message: `Unathorized access attempt - get groups - IP: ${ip}`
           });
         res.sendStatus(401); //not authorized
     }
@@ -176,20 +160,19 @@ app.get('/groups', (req, res) => {
 app.get('/profile', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-    const timeStamp = Date.now(); //current UTC timestamp in ms
 
     if (req.session.userID) { //authorized
         member.getMember(req.session.userID, (result) => {
             logger.log({
                 level: 'info',
-                message: `${timeStamp} - get profile - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
+                message: `Get profile - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
               });
             res.json(result[0]); 
         })
     }else{
         logger.log({
             level: 'warn',
-            message: `${timeStamp} - Unathorized access attempt - get profile - IP: ${ip}`
+            message: `Unathorized access attempt - get profile - IP: ${ip}`
           });
         res.sendStatus(401); //not authorized
     }
@@ -201,14 +184,13 @@ app.get('/profile', (req, res) => {
 app.post('/profile', profileValidationRules(), (req, res) => { 
     
                 const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-                const timeStamp = Date.now();
 
                 //fields are not valid return error messages
                 const errors = validationResult(req);
                 if (!errors.isEmpty()) {
                     logger.log({
                         level: 'warn',
-                        message: `${timeStamp} - Failed profile update, 422 Invalid input ${errors} - IP: ${ip} Email: ${req.body.user.email}`
+                        message: `Failed profile update, 422 Invalid input ${errors} - IP: ${ip} Email: ${req.body.user.email}`
                       });
 
                     return res.status(422).json({errors: errors.array()}); //bad request
@@ -219,14 +201,14 @@ app.post('/profile', profileValidationRules(), (req, res) => {
                     member.updateMember(user, (result) => {
                         logger.log({
                             level: 'info',
-                            message: `${timeStamp} - update profile - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
+                            message: `Update profile - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
                           });
                         res.sendStatus(204);
                     })
                 }else { //not authorized
                     logger.log({
                         level: 'warn',
-                        message: `${timeStamp} - Unathorized access attempt - get profile - IP: ${ip}`
+                        message: `Unathorized access attempt - get profile - IP: ${ip}`
                       });
                     res.sendStatus(401); 
                 }
@@ -238,20 +220,19 @@ app.post('/profile', profileValidationRules(), (req, res) => {
 app.get('/users/:searchVal', sanitizeSearchVal(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-    const timeStamp = Date.now(); //current UTC timestamp in ms
 
     if (req.session.userID) { //authorized
         member.searchMembers(req.params.searchVal, req.session.userID, (result) => {
             logger.log({
                 level: 'info',
-                message: `${timeStamp} - search members - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`
+                message: `Search members - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`
               });
             res.send(result);
         })
     } else { //not authorized
         logger.log({
             level: 'warn',
-            message: `${timeStamp} - Unathorized access attempt - search users - IP: ${ip}`
+            message: `Unathorized access attempt - search users - IP: ${ip}`
           });
         res.sendStatus(401); 
     }
@@ -263,14 +244,13 @@ app.get('/users/:searchVal', sanitizeSearchVal(), (req, res) => {
 app.post('/register', registerValidationRules(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-    const timeStamp = Date.now(); //current UTC timestamp in ms
     const errors = validationResult(req);
     
     //if posted fields are not valid send error messages
     if (!errors.isEmpty()) {
         logger.log({
             level: 'warn',
-            message: `${timeStamp} - Failed registration, 422 Invalid input ${errors} - IP: ${ip} Email: ${req.body.user.email}`
+            message: `Failed registration, 422 Invalid input ${errors} - IP: ${ip} Email: ${req.body.user.email}`
           });
         return res.status(422).json({errors: errors.array()});
     }
@@ -282,14 +262,14 @@ app.post('/register', registerValidationRules(), (req, res) => {
             req.session.userType = req.body.user.userType; //create session userType
             logger.log({
                 level: 'info',
-                message: `${timeStamp} - register - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
+                message: `Register - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
               });
             res.sendStatus(204); //success - no content
 
         } else { //unauthorized
             logger.log({
                 level: 'warn',
-                message: `${timeStamp} - Failed registration attempt attempt, 400 - search users - IP: ${ip}`
+                message: `Failed registration attempt attempt, 400 - search users - IP: ${ip}`
               });
             res.sendStatus('400'); 
         }
@@ -302,7 +282,6 @@ app.post('/register', registerValidationRules(), (req, res) => {
 
 app.get('/logout', (req, res) => {
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-    const timeStamp = Date.now(); //current UTC timestamp in ms
     
     const session = req.session.id;
     const userID = req.session.userID;
@@ -312,13 +291,13 @@ app.get('/logout', (req, res) => {
             if (err) {
                 logger.log({
                     level: 'error',
-                    message: `${timeStamp} - logout failed - IP: ${ip}, session: ${session}, MemberID: ${userID}, userType: ${userType}`
+                    message: `Logout failed - IP: ${ip}, session: ${session}, MemberID: ${userID}, userType: ${userType}`
                   });
                 res.json('Error destroying session');
             } else {
                 logger.log({
                     level: 'info',
-                    message: `${timeStamp} - logout - IP: ${ip}, session: ${session}, MemberID: ${userID}, userType: ${userType}`
+                    message: `Logout - IP: ${ip}, session: ${session}, MemberID: ${userID}, userType: ${userType}`
                   });
                 res.status(204).json('Session destroyed successfully');
             }
@@ -332,14 +311,13 @@ app.get('/logout', (req, res) => {
 app.post('/creategroup', createGroupSanitize(), (req, res) => {
 
                 const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-                const timeStamp = Date.now(); //current UTC timestamp in ms
 
                 //input fields are invalid
                 const errors = validationResult(req);
                 if (!errors.isEmpty()) {
                     logger.log({
                         level: 'warn',
-                        message: `${timeStamp} - Failed group creation, 422 Invalid input ${errors} - IP: ${ip}`
+                        message: `Failed group creation, 422 Invalid input ${errors} - IP: ${ip}`
                       });
                     return res.status(422).json({errors: errors.array()});
                 }
@@ -349,14 +327,14 @@ app.post('/creategroup', createGroupSanitize(), (req, res) => {
                     group.createGroup(req.body.group, req.session.userID, (result) => {
                         logger.log({
                             level: 'info',
-                            message: `${timeStamp} - create group - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, groupID:  ${result.groupID}`
+                            message: `Create group - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, groupID:  ${result.groupID}`
                           });
                         res.sendStatus(200);
                     })
                 }else {
                     logger.log({
                         level: 'warn',
-                        message: `${timeStamp} - Unathorized create group, 401 IP: ${ip}`
+                        message: `Unathorized create group, 401 IP: ${ip}`
                       });
                     res.sendStatus(401); //unathorized
                 }
@@ -368,14 +346,13 @@ app.post('/creategroup', createGroupSanitize(), (req, res) => {
 app.get('/scheduleday/:date', scheduleDayValidationRules(), (req, res) => {
      
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-    const timeStamp = Date.now(); //current UTC timestamp in ms
 
     //input fields are invalid
      const errors = validationResult(req);
      if (!errors.isEmpty()) {
          logger.log({
              level: 'warn',
-             message: `${timeStamp} - Failed schedule day retreival, 422 Invalid input ${errors} - IP: ${ip}`
+             message: `Failed schedule day retreival, 422 Invalid input ${errors} - IP: ${ip}`
            });
          return res.status(422).json({errors: errors.array()});
      }
@@ -386,14 +363,14 @@ app.get('/scheduleday/:date', scheduleDayValidationRules(), (req, res) => {
         event.getMemberEvents(req.session.userID, dateStr, (result) => {
             logger.log({
                 level: 'info',
-                message: `${timeStamp} - get daily schedule - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType} date: ${dateStr}`
+                message: `Get daily schedule - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType} date: ${dateStr}`
               });
             res.send(result);
         })
     }else {
         logger.log({ //unathorised
             level: 'warn',
-            message: `${timeStamp} - Unathorized to get schedule, 401 IP: ${ip}`
+            message: `Unathorized to get schedule, 401 IP: ${ip}`
           });
         res.sendStatus(401); 
     }
@@ -405,14 +382,13 @@ app.get('/scheduleday/:date', scheduleDayValidationRules(), (req, res) => {
 app.get('/groupschedule/:groupID/:currDate/:numberOfDays', groupSchedValidationRules(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-    const timeStamp = Date.now(); //current UTC timestamp in ms
     
     const errors = validationResult(req);
      
     if (!errors.isEmpty()) { //validation errors
          logger.log({
              level: 'warn',
-             message: `${timeStamp} - Failed group schedule retreival, 422 Invalid input ${errors} - IP: ${ip}`
+             message: `Failed group schedule retreival, 422 Invalid input ${errors} - IP: ${ip}`
            });
          return res.status(422).json({errors: errors.array()});
      }
@@ -421,14 +397,14 @@ app.get('/groupschedule/:groupID/:currDate/:numberOfDays', groupSchedValidationR
         groupService.getGroupSchedules(req.params.groupID, req.params.currDate, req.params.numberOfDays, req.session.userID, (result) => {
             logger.log({
                 level: 'info',
-                message: `${timeStamp} - get group schedule - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, group: ${req.params.groupID}, date: ${req.params.currDate}, numDays: ${req.params.numberOfDays}`
+                message: `Get group schedule - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, group: ${req.params.groupID}, date: ${req.params.currDate}, numDays: ${req.params.numberOfDays}`
               });
             res.send(result);
         })
     }else {//unathorised
         logger.log({ 
             level: 'warn',
-            message: `${timeStamp} - Unathorised to get group schedule, 401 IP: ${ip}`
+            message: `Unathorised to get group schedule, 401 IP: ${ip}`
           });
         res.sendStatus(401); 
     }
@@ -440,14 +416,13 @@ app.get('/groupschedule/:groupID/:currDate/:numberOfDays', groupSchedValidationR
 app.post('/profilepic', (req, res, next) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-    const timeStamp = Date.now(); //current UTC timestamp in ms
 
     if (req.session.userID) { //user is authorized     
         next()
     }else{
         logger.log({ 
             level: 'warn',
-            message: `${timeStamp} - Unathorised to update profile pic, 401 IP: ${ip}`
+            message: `Unathorised to update profile pic, 401 IP: ${ip}`
           });
         res.sendStatus(401); //not authorized
     }
@@ -458,7 +433,7 @@ upload.single('profilePic'), //get file (Multer function)
         memberService.updatePic(req.session.userID, req.file.path, (result) => {
             logger.log({
                 level: 'info',
-                message: `${timeStamp} - update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
+                message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
               });
             res.sendStatus(204); //success
         })
@@ -470,21 +445,19 @@ upload.single('profilePic'), //get file (Multer function)
 app.get('/profilePic', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-    const timeStamp = Date.now(); //current UTC timestamp in ms
 
-    if (req.session.userID) {
+    if (req.session.userID) {//authorized
         memberService.getProfilePic(req.session.userID, (result) => {
-
             logger.log({
                 level: 'info',
-                message: `${timeStamp} - get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
+                message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`
               });
             res.send(result[0].profilePic);
         })
     }else{ //not authorized
         logger.log({ 
             level: 'warn',
-            message: `${timeStamp} - Unathorised to get profile pic, 401 IP: ${ip}`
+            message: `Unathorized to get profile pic, 401 IP: ${ip}`
           });
         res.sendStatus(401); 
     }
@@ -492,4 +465,8 @@ app.get('/profilePic', (req, res) => {
 
 /////////////////////////////////TODO///////////////////////////////////////////////////////////
 //edit event
+//edit group
+//delete group
+//delete event
+//delete group member
 //change password

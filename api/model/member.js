@@ -2,15 +2,20 @@ var mysql = require('mysql');
 var _db = require('./dbconfig');    
 var crypto = require('crypto');
 var pool = mysql.createPool(_db);
+const {logger} = require('../services/logger');
 
 module.exports = {
     getMemberIDPassword: function (email, cb) {
        let sql = 'SELECT `memberID`, `password`, `userType` FROM `member` where email = ?'
 
     pool.query(sql, email, function (err, results, fields) {
-            if (err) 
+            if (err) {
+                logger.log({
+                    level: 'error',
+                    message: `Failed to get select from member, getMemberIDPassword, sql: ${sql}, values: ${email} error: ${err}`
+                  });
                 throw err;
-
+            }
             return cb(results);
         })
     },
@@ -21,8 +26,13 @@ module.exports = {
         let sql = 'SELECT * FROM `member` where email = ?';
 
         pool.query(sql, email, function (err, results, fields) {
-            if (err) 
+            if (err) {
+                logger.log({
+                    level: 'error',
+                    message: `Failed to get select from member, memberExists, sql: ${sql}, values: ${email} error: ${err}`
+                  });
                 throw err;
+            }
             if (results.length > 0) {
                 return cb(true);
             }
@@ -50,17 +60,19 @@ module.exports = {
         ];
 
         pool.query(sql, [values], function (err, result) {
-            if (err) 
+            if (err) {
+                logger.log({
+                    level: 'error',
+                    message: `Failed to get insert into member, getMemberIDPassword, sql: ${sql}, values: ${values} error: ${err}`
+                  });
                 throw err;
+            }
             cb(result.insertId);
         });
     },
 
     //update a member
     updateMember: function (user, cb) {
-
-        console.log('model member update ')
-        console.log(user);
 
         let sql = 'UPDATE `member` SET `fname` = ? , `lname` = ? , `email` = ?, `phone` = ? WHERE memberID = ?';
 
@@ -74,7 +86,10 @@ module.exports = {
 
         pool.query(sql, values, function (err, result) {
             if (err){
-                console.log(err);
+                logger.log({
+                    level: 'error',
+                    message: `Failed to update member, updateMember, sql: ${sql}, values: ${values} error: ${err}`
+                  });
                 throw err;
             }
             console.log(result);
@@ -88,8 +103,13 @@ module.exports = {
         let sql = 'SELECT * FROM `member` where memberID = ?';
 
         pool.query(sql, id, function (err, results, fields) {
-            if (err) 
+            if (err) {
+                logger.log({
+                    level: 'error',
+                    message: `Failed to get select from member, getMember, sql: ${sql}, values: ${id} error: ${err}`
+                  });
                 throw err;
+            }
             if (results.length > 0) {
                 return cb(results);
             }
@@ -110,8 +130,13 @@ module.exports = {
             userID
         ];
         pool.query(sql, values, function (err, result) {
-            if (err) 
+            if (err) {
+                logger.log({
+                    level: 'error',
+                    message: `Failed to get select from member, searchMembers, sql: ${sql}, values: ${values} error: ${err}`
+                  });
                 throw err;
+            }
             cb(result);
         });
     },
@@ -121,8 +146,13 @@ module.exports = {
 
         let sql = 'SELECT profilePic FROM `member` where memberID = ?'
         pool.query(sql, id, function (err, results, fields) {
-            if (err) 
+            if (err) {
+                logger.log({
+                    level: 'error',
+                    message: `Failed to get select from member, getProfilePic, sql: ${sql}, values: ${id} error: ${err}`
+                  });
                 throw err;
+            }
             
             return cb(results);
         })
@@ -139,8 +169,14 @@ module.exports = {
         ];
         
         pool.query(sql, values, function (err, result) {
-            if (err) 
+            if (err) {
+
+                logger.log({
+                    level: 'error',
+                    message: `Failed to udpate member, updateProfilePic, sql: ${sql}, values: ${values} error: ${err}`
+                  });
                 throw err;
+            }
             cb(result);
         });
     }

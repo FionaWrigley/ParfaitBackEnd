@@ -1,6 +1,7 @@
 var mysql = require('mysql');
 var _db = require('./dbconfig');
 var pool = mysql.createPool(_db);
+const {logger} = require('../services/logger');
 
 module.exports = {
 
@@ -22,11 +23,19 @@ module.exports = {
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to create connection, createEvent, error: ${err}`
+                      });
                     throw err;
                 }
                 connection.query(sql, [values], (err, results) => {
                     if (err) {
                         return connection.rollback(() => {
+                            logger.log({
+                                level: 'error',
+                                message: `Failed to insert into event, sql: ${sql}, values: ${values} error: ${err}`
+                              });
                             connection.release();
                             throw err;
                         });
@@ -38,6 +47,10 @@ module.exports = {
                     connection.query(sql, [values], (error, results) => {
                         if (error) {
                             return connection.rollback(() => {
+                                logger.log({
+                                    level: 'error',
+                                    message: `Failed to insert into eventmember, sql: ${sql}, values: ${values} error: ${err}`
+                                  });
                                 connection.release();
                                 throw error;
                             });
@@ -46,6 +59,10 @@ module.exports = {
                             .commit(function (err) {
                                 if (err) {
                                     return connection.rollback(function () {
+                                        logger.log({
+                                            level: 'error',
+                                            message: `Failed to commit, create event, error: ${err}`
+                                          });
                                         connection.release();
                                         throw err;
                                     });
@@ -65,11 +82,19 @@ module.exports = {
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to create connection, deleteEvent, error: ${err}`
+                      });
                     throw err;
                 }
                 connection.query(sql, eventID, (err, results) => {
                     if (err) {
                         return connection.rollback(() => {
+                            logger.log({
+                                level: 'error',
+                                message: `Failed to delete from eventmember, sql: ${sql}, values: ${eventID} error: ${err}`
+                              });
                             connection.release();
                             throw err;
                         });
@@ -80,6 +105,10 @@ module.exports = {
                     connection.query(sql, eventID, (error, results2) => {
                         if (error) {
                             return connection.rollback(() => {
+                                logger.log({
+                                    level: 'error',
+                                    message: `Failed to delete from event, sql: ${sql}, values: ${eventID} error: ${err}`
+                                  });
                                 connection.release();
                                 throw error;
                             });
@@ -88,6 +117,10 @@ module.exports = {
                             .commit((err) => {
                                 if (err) {
                                     return connection.rollback(() => {
+                                        logger.log({
+                                            level: 'error',
+                                            message: `Failed to commit, deleteEvent, error: ${err}`
+                                          });
                                         connection.release();
                                         throw err;
                                     });
@@ -113,11 +146,19 @@ module.exports = {
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to create connection, deleteMemberEvent, error: ${err}`
+                      });
                     throw err;
                 }
                 connection.query(sql, values, (err, results) => {
                     if (err) {
                         return connection.rollback(() => {
+                            logger.log({
+                                level: 'error',
+                                message: `Failed to delete from eventmember, sql: ${sql}, values: ${values} error: ${err}`
+                              });
                             connection.release();
                             throw err;
                         });
@@ -128,6 +169,10 @@ module.exports = {
                     connection.query(sql, eventID, (error, results) => {
                         if (error) {
                             return connection.rollback(() => {
+                                logger.log({
+                                    level: 'error',
+                                    message: `Failed to delete from event, sql: ${sql}, values: ${eventID} error: ${err}`
+                                  });
                                 connection.release();
                                 throw error;
                             });
@@ -136,6 +181,10 @@ module.exports = {
                             .commit((err) => {
                                 if (err) {
                                     return connection.rollback(() => {
+                                        logger.log({
+                                            level: 'error',
+                                            message: `Failed to commit, deleteMemberEvent, error: ${err}`
+                                          });
                                         connection.release();
                                         throw err;
                                     });
@@ -166,8 +215,13 @@ module.exports = {
         ];
 
         pool.query(sql, values, function (err, result) {
-            if (err) 
+            if (err) {
+                logger.log({
+                    level: 'error',
+                    message: `Failed to udpate event, editEvent, sql: ${sql}, values: ${values} error: ${err}`
+                  });
                 throw err;
+            }
             cb(result.insertId);
         });
     },
@@ -183,8 +237,13 @@ module.exports = {
         ];
 
         pool.query(sql, values, function (err, result) {
-            if (err) 
+            if (err) {
+                logger.log({
+                    level: 'error',
+                    message: `Failed to update eventmember, acceptEvent, event, sql: ${sql}, values: ${values} error: ${err}`
+                  });
                 throw err;
+            }
             cb(result);
         });
     },
@@ -199,8 +258,13 @@ module.exports = {
         ];
 
         pool.query(sql, values, function (err, results) { 
-            if (err) 
+            if (err) {
+                logger.log({
+                    level: 'error',
+                    message: `Failed to select from event, getMemberEvents, sql: ${sql}, values: ${values} error: ${err}`
+                  });
                 throw err;
+            }
             console.log(results);
             return cb(results);
         })
@@ -225,11 +289,19 @@ module.exports = {
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to create connection, createGroupEvent, error: ${err}`
+                      });
                     throw err;
                 }
                 connection.query(sql, [values], (err, results) => {
                     if (err) {
                         return connection.rollback(() => {
+                            logger.log({
+                                level: 'error',
+                                message: `Failed to insert into event, createGroupEvent, sql: ${sql}, values: ${values} error: ${err}`
+                              });
                             connection.release();
                             throw err;
                         });
@@ -242,11 +314,15 @@ module.exports = {
                     }
 
                     sql = 'INSERT INTO `eventmember`(`eventID`, `memberID`, `acceptedFlag`) VALUES ?';
-                    //values = [eventID, memberID, acceptedFlag];
+                   
                     
                     connection.query(sql, [records], (error, results) => {
                         if (error) {
                             return connection.rollback(() => {
+                                logger.log({
+                                    level: 'error',
+                                    message: `Failed to insert into eventmember, createGroupEvent, sql: ${sql}, values: ${records} error: ${err}`
+                                  });
                                 connection.release();
                                 throw error;
                             });
@@ -255,6 +331,10 @@ module.exports = {
                             .commit(function (err) {
                                 if (err) {
                                     return connection.rollback(function () {
+                                        logger.log({
+                                            level: 'error',
+                                            message: `Failed to commit, createGroupEvent, error: ${err}`
+                                          });
                                         connection.release();
                                         throw err;
                                     });
