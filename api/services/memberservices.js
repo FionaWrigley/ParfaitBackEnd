@@ -1,4 +1,6 @@
-const {authenticate} = require('../model/member');
+const {
+    authenticate
+} = require('../model/member');
 const member = require('../model/member');
 const group = require('../model/group');
 var crypto = require('crypto');
@@ -7,100 +9,42 @@ var validator = require('validator');
 module.exports = {
 
     login: function (email, password, cb) {
-      
-            member
+
+        member
             .getMemberIDPassword(email, (results) => {
-                console.log('results ',results[0]);
 
                 if (results.length > 0) {
-                    console.log('in here')
+
                     let hash = crypto
                         .createHash('sha1')
                         .update(password)
                         .digest('base64');
 
-                        console.log('hash ',hash);
-                        console.log('results.password ' + results[0].password)
-
                     if (results[0].password == hash) {
-                            return cb(results[0]); 
-                    }else{
+                        return cb(results[0]);
+                    } else {
                         return cb(401);
                     }
-                }else{
+                } else {
                     return cb(401);
-                } 
+                }
             });
     },
-
-    register: function (user, cb) {
-
-        member
-            .createMember(user.fname, user.lname, user.email, user.phone, user.password, function (results) {
-
-                //console.log(results);
-                if (results) {
-                            return cb(results); 
-                }else{ return cb(0);}
-            });
-    },
-    // searchMembers: function (searchTerm, cb) {
-
-    //     member.searchMembers(searchTerm, function (results) {
-    //         return cb(results);
-
-    //         })
-    // },
 
     getProfilePic: function (id, cb) {
 
         member
             .getProfilePic(id, function (results) {
-               return cb(results); 
-                    }
-            );
+                return cb(results);
+            });
     },
-
-    // getProfile: function (id, cb) {
-    //     member
-    //         .getMember(id, function (results) {
-
-    //            return cb(results);             
-    //                 }
-    //         );
-    // },  
-
-    // updateProfile: function (user, cb) {
-
-    //     console.log("member services update");
-    //     member
-    //         .updateMember(user, function (results) {
-
-    //            return cb(results);             
-    //                 }
-    //         );
-    // },
 
     updatePic: function (id, pic, cb) {
 
-        console.log("in update pic member service");
-        //console.log(image);
         member
-             .updateProfilePic(id, pic, function (results) {
+            .updateProfilePic(id, pic, function (results) {
 
-        //         console.log("get member")
-        //         console.log(results);
-        //        return cb(results); 
-                    
-                     }
-             );
+            });
     }
-
-    // auth: function (passwords, password){     console.log("in auth func");     if
-    // (passwords.length > 0){         let hash =
-    // crypto.createHash('sha1').update(password).digest('base64');         if
-    // (passwords[0].password == hash){             return result = true;         }
-    //    }     console.log(password);     console.log(passwords);     result =
-    // false;     return result; }
 
 }

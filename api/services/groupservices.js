@@ -48,11 +48,11 @@ const datefns = require('date-fns');
 getGroupSchedules: function (gID, minDateStr, numberOfDays, userID, cb){
 
     let minDate = new Date(minDateStr);
+
+    if (numberOfDays > 365){ numberOfDays = 365} //schedule should never return more than a year
+
     let maxDate = datefns.add(minDate, {days: numberOfDays});
     let maxDateStr = datefns.format(maxDate, 'yyyy-MM-dd');
-    console.log(minDate.toString());
-    console.log(maxDate.toString());
-    console.log(maxDateStr);
 
     group.getGroupSchedule(gID, minDateStr, maxDateStr, userID, (result) => {
         

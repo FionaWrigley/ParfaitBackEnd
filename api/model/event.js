@@ -265,7 +265,6 @@ module.exports = {
                   });
                 throw err;
             }
-            console.log(results);
             return cb(results);
         })
     },

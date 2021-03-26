@@ -96,8 +96,7 @@ module.exports = {
         })
     },
 
-    //delete group including group member entries, 
-    
+    //delete group including group member entries,  
 ///////////////////////TODO/////////////////////////////////////////
 //delete group events
 

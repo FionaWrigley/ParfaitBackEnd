@@ -1,19 +1,21 @@
 var mysql = require('mysql');
-var _db = require('./dbconfig');    
+var _db = require('./dbconfig');
 var crypto = require('crypto');
 var pool = mysql.createPool(_db);
-const {logger} = require('../services/logger');
+const {
+    logger
+} = require('../services/logger');
 
 module.exports = {
     getMemberIDPassword: function (email, cb) {
-       let sql = 'SELECT `memberID`, `password`, `userType` FROM `member` where email = ?'
+        let sql = 'SELECT `memberID`, `password`, `userType` FROM `member` where email = ?'
 
-    pool.query(sql, email, function (err, results, fields) {
+        pool.query(sql, email, function (err, results, fields) {
             if (err) {
                 logger.log({
                     level: 'error',
                     message: `Failed to get select from member, getMemberIDPassword, sql: ${sql}, values: ${email} error: ${err}`
-                  });
+                });
                 throw err;
             }
             return cb(results);
@@ -23,20 +25,20 @@ module.exports = {
     //check if email already exists
     memberExists: function (email, cb) {
 
-        let sql = 'SELECT * FROM `member` where email = ?';
+        let sql = 'SELECT memberID FROM `member` where email = ?';
 
         pool.query(sql, email, function (err, results, fields) {
             if (err) {
                 logger.log({
                     level: 'error',
                     message: `Failed to get select from member, memberExists, sql: ${sql}, values: ${email} error: ${err}`
-                  });
+                });
                 throw err;
             }
             if (results.length > 0) {
-                return cb(true);
+                return cb(results[0]); //return memberID 
             }
-            return cb(false);
+            return cb(0); //return nothing
         })
     },
 
@@ -44,7 +46,7 @@ module.exports = {
     createMember: function (user, cb) {
 
         var sql = 'INSERT INTO `member`(`fname`, `lname`, `email`, `phone`, `password`, `userType`' +
-                ') VALUES (?)';
+            ') VALUES (?)';
         let hash = crypto
             .createHash('sha1')
             .update(user.password)
@@ -55,8 +57,9 @@ module.exports = {
             user.lname,
             user.email,
             user.phone,
+            hash,
             user.userType,
-            hash
+
         ];
 
         pool.query(sql, [values], function (err, result) {
@@ -64,10 +67,11 @@ module.exports = {
                 logger.log({
                     level: 'error',
                     message: `Failed to get insert into member, getMemberIDPassword, sql: ${sql}, values: ${values} error: ${err}`
-                  });
+                });
                 throw err;
+            } else {
+                cb(result.insertId);
             }
-            cb(result.insertId);
         });
     },
 
@@ -85,14 +89,13 @@ module.exports = {
         ];
 
         pool.query(sql, values, function (err, result) {
-            if (err){
+            if (err) {
                 logger.log({
                     level: 'error',
                     message: `Failed to update member, updateMember, sql: ${sql}, values: ${values} error: ${err}`
-                  });
+                });
                 throw err;
             }
-            console.log(result);
             cb(result.insertId);
         });
     },
@@ -107,7 +110,7 @@ module.exports = {
                 logger.log({
                     level: 'error',
                     message: `Failed to get select from member, getMember, sql: ${sql}, values: ${id} error: ${err}`
-                  });
+                });
                 throw err;
             }
             if (results.length > 0) {
@@ -121,7 +124,7 @@ module.exports = {
     searchMembers: function (str, userID, cb) {
 
         var sql = 'SELECT * FROM `member` WHERE ((`fname` LIKE ?) OR (`lname` LIKE ?) O' +
-                'R (`email` LIKE ?) OR (`phone` LIKE ?)) AND memberID NOT IN (?)';
+            'R (`email` LIKE ?) OR (`phone` LIKE ?)) AND memberID NOT IN (?)';
         let values = [
             '%' + str + '%',
             '%' + str + '%',
@@ -134,7 +137,7 @@ module.exports = {
                 logger.log({
                     level: 'error',
                     message: `Failed to get select from member, searchMembers, sql: ${sql}, values: ${values} error: ${err}`
-                  });
+                });
                 throw err;
             }
             cb(result);
@@ -150,10 +153,10 @@ module.exports = {
                 logger.log({
                     level: 'error',
                     message: `Failed to get select from member, getProfilePic, sql: ${sql}, values: ${id} error: ${err}`
-                  });
+                });
                 throw err;
             }
-            
+
             return cb(results);
         })
     },
@@ -162,19 +165,19 @@ module.exports = {
     updateProfilePic: function (id, pic, cb) {
 
         let sql = 'UPDATE `member` SET `profilePicPath` = ? WHERE memberID = ?';
-        
+
         let values = [
             pic,
             id
         ];
-        
+
         pool.query(sql, values, function (err, result) {
             if (err) {
 
                 logger.log({
                     level: 'error',
                     message: `Failed to udpate member, updateProfilePic, sql: ${sql}, values: ${values} error: ${err}`
-                  });
+                });
                 throw err;
             }
             cb(result);
