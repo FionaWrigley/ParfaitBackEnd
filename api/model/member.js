@@ -147,7 +147,7 @@ module.exports = {
     //get member profile pic
     getProfilePic: function (id, cb) {
 
-        let sql = 'SELECT profilePic FROM `member` where memberID = ?'
+        let sql = 'SELECT profilePicPath FROM `member` where memberID = ?'
         pool.query(sql, id, function (err, results, fields) {
             if (err) {
                 logger.log({
@@ -156,7 +156,7 @@ module.exports = {
                 });
                 throw err;
             }
-
+            console.log('results ', results)
             return cb(results);
         })
     },

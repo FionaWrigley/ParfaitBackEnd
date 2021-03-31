@@ -50,7 +50,7 @@ const registerValidationRules = () => {
 
 const scheduleDayValidationRules = () => {
   return [
-    param('searchVal').isSlug().bail().trim().escape(),
+    param('searchVal').trim().escape()
   ]
 }
 

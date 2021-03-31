@@ -2,6 +2,8 @@
 Parfait API
 ///////////////////////////////////////////////////////////
 
+All files can be found at https://github.com/FionaWrigley/ParfaitBackEnd
+
 import parfait.sql into mySQL DB
 
 Update .env file to include the following database paramaters pointing to your new DB

@@ -41,10 +41,16 @@ module.exports = {
 
     updatePic: function (id, pic, cb) {
 
+        //select profile pic
+        //if not null delete old pic 
+        //save new pic
+
         member
             .updateProfilePic(id, pic, function (results) {
 
             });
     }
+
+   
 
 }

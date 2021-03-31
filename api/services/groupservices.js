@@ -131,6 +131,12 @@ getGroupSchedules: function (gID, minDateStr, numberOfDays, userID, cb){
     cb(groupSched);
     })
 
-   }
+   },
+
+   getGroupProfilePics: function (useID, groupID, cb){
+
+    //get groupMembers for groupID
+    //get images from member for all group members not = userID 
+}
 
  }

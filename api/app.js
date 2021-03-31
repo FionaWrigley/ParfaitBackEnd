@@ -33,7 +33,6 @@ const storage = multer.diskStorage({
     destination: './public/images',
     filename: function (req, file, cb) {
         cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-
     }
 });
 const upload = multer({storage: storage});
@@ -287,13 +286,17 @@ app.post('/profile', profileValidationRules(), (req, res) => {
 // //////////////////////////////////////////////////////////////////////////////
 app.get('/profilepic', (req, res) => {
 
+    console.log('profile pic');
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     if (req.session.userID) { //authorized
         memberService.getProfilePic(req.session.userID, (result) => {
             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-            res.send(result[0].profilePic);
-        })
+            console.log(result);
+            
+            res.sendFile(__dirname + '\\' + result[0].profilePicPath); 
+
+        })      
     } else { //not authorized
         logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
         res.sendStatus(401);
@@ -313,7 +316,7 @@ app.post('/profilepic', (req, res, next) => {
         logger.log({level: 'warn', message: `Unathorised to update profile pic, 401 IP: ${ip}`});
         res.sendStatus(401); //not authorized
     }
-}, upload.single('profilePic'), //get file (Multer function)
+}, upload.single('profilepic'), //get file (Multer function)
         function (req, res, next) {
 
     memberService.updatePic(req.session.userID, req.file.path, (result) => {
@@ -437,6 +440,72 @@ app.post('/register', registerValidationRules(), (req, res) => {
     })
 });
 
+// /////////////////////////////////////////////////////////////////////////////
+// / ////////// create new event
+// //////////////////////////////////////////////////////////////////////////////
+
+app.post('/createevent', (req, res) => {
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+    let eventObj = req.body.form;
+    console.log(eventObj);
+    //input fields are invalid
+    // const errors = validationResult(req);
+    // if (!errors.isEmpty()) {
+    //     logger.log({level: 'warn', message: `Failed group creation, 422 Invalid input ${errors} - IP: ${ip}`});
+    //     return res
+    //         .status(422)
+    //         .json({
+    //             errors: errors.array()
+    //         });
+    // }
+
+    if (req.session.userID) { //authorized
+
+         event.createEvent(eventObj, req.session.userID, (result) => {
+             logger.log({level: 'info', message: `Create event - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, groupID:  ${result.eventID}`});
+             res.sendStatus(204);
+         })
+     } else { //unathorized
+         logger.log({level: 'warn', message: `Unathorized create event, 401 IP: ${ip}`});
+         res.sendStatus(401); //unathorized
+     }
+});
+
+/////////////////////////////////////////////////////////////////////////////////////
+//Delete event
+///////////////////////////////////////////////////////////////////////////////////
+app.post('/deleteevent', (req, res) => {
+
+    console.log('eventID', req.body.eventID);
+    
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+  
+    
+    // const errors = validationResult(req);
+
+    //if posted fields are not valid send error messages
+    // if (!errors.isEmpty()) {
+    //     logger.log({level: 'warn', message: `Failed registration, 422 Invalid input ${errors} - IP: ${ip} Email: ${req.body.user.email}`});
+    //     return res
+    //         .status(422)
+    //         .json({
+    //             errors: errors.array()
+    //         });
+    // }
+
+    if (req.session.userID) { //authorised
+        event.deleteEvent(req.body.eventID, req.session.userID, (result) => {
+            
+            logger.log({level: 'info', message: `Delete event - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, group: ${req.body.eventID}`});
+            res.sendStatus(204);
+        })
+    } else { //unathorised
+        logger.log({level: 'warn', message: `Unathorised attempt to delete event, 401 IP: ${ip}`});
+        res.sendStatus(401);
+    }
+})
 // ///////////////////////////////TODO//////////////////////////////////////////
 // / ////////////// edit event edit group delete group delete event delete group
 // delete group member change password

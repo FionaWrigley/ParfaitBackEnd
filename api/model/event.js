@@ -6,18 +6,18 @@ const {logger} = require('../services/logger');
 module.exports = {
 
     //add an event
-    createEvent: function (startDate, startTime, endDate, endTime, eventName, eventDesc, repeatFrequency, repeatUntil, groupID, memberID, acceptedFlag, cb) {
+    createEvent: function (event, userID, cb) {
         let sql = 'INSERT INTO `event`(`startDate`, `startTime`, `endDate`, `endTime`, `eventName`,`eventDescription`, `repeatFrequency`, `repeatUntil`, `groupID`) VALUES (?)';
 
         let values = [
-            startDate,
-            startTime,
-            endDate,
-            endTime,
-            eventName,
-            eventDesc,
-            repeatFrequency,
-            repeatUntil,
+            event.startDate,
+            event.startTime,
+            event.endDate,
+            event.endTime,
+            event.eventName,
+            event.eventDescription,
+            event.frequency,
+            event.repeatUntil,
             0
         ];
         pool.getConnection((err, connection) => {
@@ -42,7 +42,7 @@ module.exports = {
                     }
                     let eventID = results.insertId;
                     sql = 'INSERT INTO `eventmember`(`eventID`, `memberID`, `acceptedFlag`) VALUES (?)';
-                    values = [eventID, memberID, acceptedFlag];
+                    values = [eventID, userID, true];
                     
                     connection.query(sql, [values], (error, results) => {
                         if (error) {
@@ -68,7 +68,7 @@ module.exports = {
                                     });
                                 }
                                 connection.release();
-                                return cb('success');
+                                return cb(eventID);
                             });
                     });
                 })
@@ -76,7 +76,7 @@ module.exports = {
         })
     },
 
-    deleteEvent: function (eventID, cb) {
+    deleteEvent: function (eventID, userID, cb) {
         //delete event for all members
         let sql = 'DELETE FROM `eventmember` WHERE `eventID` = ?';
         pool.getConnection((err, connection) => {
@@ -126,7 +126,7 @@ module.exports = {
                                     });
                                 }
                                 connection.release();
-                                return cb('success');
+                                return cb(1);
                             });
                     });
                 })
@@ -251,7 +251,7 @@ module.exports = {
     //get events for a member for a specific date
     getMemberEvents: function (memberID, dateSelected, cb) {
         
-        let sql = 'SELECT * FROM `event` INNER JOIN `eventmember` where event.eventID = eventmember.eventID AND eventmember.memberID = ? AND (? BETWEEN event.startDate AND event.endDate) ORDER BY event.startTime DESC';
+        let sql = 'SELECT * FROM `event` INNER JOIN `eventmember` where event.eventID = eventmember.eventID AND eventmember.memberID = ? AND (? BETWEEN event.startDate AND event.endDate) ORDER BY event.startDate, event.startTime';
         let values = [
             memberID,
             dateSelected
