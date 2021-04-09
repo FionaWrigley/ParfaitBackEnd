@@ -287,7 +287,56 @@ deleteGroupMember: function (memberID, groupID, cb) {
                 });
     },
 
+    getGroupDetails: function (groupID, userID, cb){
+
+        //check the user is in the group ergo can retrieve group records
+        let sql = 'SELECT * FROM `groupmember` WHERE memberID = ? AND groupID = ?';
+        let values = [
+            userID,
+            groupID
+        ]
+        pool.query(sql, values, (error, results) => {
+            if (error){
+                logger.log({
+                    level: 'error',
+                    message: `Failed to select from groupmember, getGroupDetails, sql: ${sql}, values: ${values} error: ${err}`
+                  });
+                throw error;
+            }
+
+            if(results.length > 0){//user is a group member 
+            
+                sql = 'SELECT parfaitgroup.*, member.memberID, member.fname, member.lname, member.profilePicPath, groupmember.activeFlag, groupmember.adminFlag'
+                + ' FROM `parfaitgroup` INNER JOIN `groupmember` ON groupmember.groupID = parfaitgroup.groupID '
+                + ' INNER JOIN `member` ON member.memberID = groupmember.memberID '
+                + ' WHERE parfaitgroup.groupID = ?';
+
+                pool.query(sql, groupID, (error, results) => {
+                    if (error){
+                        logger.log({
+                            level: 'error',
+                            message: `Failed to select from groupmember, getGroupDetails, sql: ${sql}, values: ${groupID} error: ${err}`
+                          });
+                        throw error;
+                    }
+                    cb(results);
+                })
+
+            }
+        });
+
+    },
+
+   
+
+
     getGroupSchedule: function (groupID, minDate, maxDate, userID, cb){
+
+        console.log('group model')
+        console.log('gid ', groupID)
+        console.log('mindate ', minDate)
+        console.log('maxdate ', maxDate)
+        console.log('userID ', userID)
 
         //check the user is in the group ergo can retrieve group records
         let sql = 'SELECT * FROM `groupmember` WHERE memberID = ? AND groupID = ?';
@@ -306,7 +355,7 @@ deleteGroupMember: function (memberID, groupID, cb) {
 
             if(results.length > 0){//user is a group member 
             //get all events for all users in group from min date to max date
-            sql = 'SELECT parfaitgroup.*, member.memberID, member.fname, member.lname, member.profilePic, groupmember.activeFlag, groupmember.adminFlag, eventmember.acceptedFlag, event.*'
+            sql = 'SELECT parfaitgroup.*, member.memberID, member.fname, member.lname, member.profilePicPath, groupmember.activeFlag, groupmember.adminFlag, eventmember.acceptedFlag, event.*'
             + ' FROM `parfaitgroup` INNER JOIN `groupmember` ON groupmember.groupID = parfaitgroup.groupID '
             + ' INNER JOIN `member` ON member.memberID = groupmember.memberID '
             + ' LEFT JOIN `eventmember` ON member.memberID = eventmember.memberID '
@@ -333,11 +382,35 @@ deleteGroupMember: function (memberID, groupID, cb) {
                       });
                     throw error; 
                 }
+                console.log('query results ', results)
                 return cb(results);
             }) 
             }else{//user is not in group and should not get schedule data
                 cb([]);
             }  
         })
-    }
+    },
+
+        //get group 
+        getGroupImages: function (memberID, groupID, cb){
+            let sql = 'SELECT member.profilePicPath FROM `member` INNER JOIN `groupmember`' +
+                        ' ON member.memberID = groupmember.memberID' +
+                        ' WHERE ( groupmember.groupID = ? AND groupmember.memberID != ? )';
+            
+            let values = [
+                groupID,
+                memberID
+            ];
+    
+            pool.query(sql, values, function (err, results) {
+                if (err) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to select profilePicPath, getProfilePicPath, sql: ${sql}, values: ${values} error: ${err}`
+                      });
+                    throw err;
+                }
+                cb(results);
+            });
+    },
 }

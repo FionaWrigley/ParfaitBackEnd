@@ -345,5 +345,45 @@ module.exports = {
                 })
             })
         })
-    }
+    },
+
+    getGroupEvents: function (minDate, maxDate, userList, cb){
+
+        console.log('get group events model')
+        //console.log('gid ', groupID)
+        console.log('mindate ', minDate)
+        console.log('maxdate ', maxDate)
+        console.log('userList ', userList)
+
+   
+            //get all events for all users in group from min date to max date
+            sql = 'SELECT eventmember.memberID, eventmember.acceptedFlag, event.*'
+            + ' FROM `eventmember` INNER JOIN event ON eventmember.eventID = event.eventID' 
+            + ' WHERE eventmember.memberID IN (?) AND'
+            + ' (event.startDate BETWEEN ? AND ?'
+            + ' OR event.endDate BETWEEN ?  AND ?'
+            + ' OR (event.startDate < ? AND event.endDate > ?))';
+
+            values = [
+                userList,
+                minDate,
+                maxDate,
+                minDate,
+                maxDate,
+                minDate,
+                maxDate
+            ]
+
+            pool.query(sql, values, (error, results) => {
+                if (error) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to get group schedules, getGroupSchedule, sql: ${sql}, values: ${values} error: ${err}`
+                      });
+                    throw error; 
+                }
+                console.log('query results ', results)
+                return cb(results);
+            }) 
+    },
 }

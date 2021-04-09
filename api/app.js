@@ -69,7 +69,8 @@ app.use(cookieParser());
 app.use(bodyParser.json({limit: '50mb'})); // support json encoded bodies
 app.use(bodyParser.urlencoded({parameterLimit: 100000, extended: true, limit: '50mb'}));
 app.use(bodyParser.raw({limit: '50mb'}));
-
+app.use(express.static('public'));
+console.log(__dirname);
 // RATE LIMITING prevents test scripts hence is currently commmented out
 // app.use(secondLimit, dailyLimit); //returns error code 429 when either rate
 // limit reached
@@ -286,7 +287,6 @@ app.post('/profile', profileValidationRules(), (req, res) => {
 // //////////////////////////////////////////////////////////////////////////////
 app.get('/profilepic', (req, res) => {
 
-    console.log('profile pic');
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     if (req.session.userID) { //authorized
@@ -294,8 +294,7 @@ app.get('/profilepic', (req, res) => {
             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
             console.log(result);
             
-            res.sendFile(__dirname + '\\' + result[0].profilePicPath); 
-
+            res.sendFile(__dirname + '\\public\\' + result[0].profilePicPath); 
         })      
     } else { //not authorized
         logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
@@ -319,7 +318,9 @@ app.post('/profilepic', (req, res, next) => {
 }, upload.single('profilepic'), //get file (Multer function)
         function (req, res, next) {
 
-    memberService.updatePic(req.session.userID, req.file.path, (result) => {
+            let path = req.file.path.replace('public\\',""); //trim the public folder off path
+            console
+    memberService.updatePic(req.session.userID, path, (result) => {
         logger.log({level: 'info', message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
         res.sendStatus(204); //success
     })
@@ -380,7 +381,7 @@ app.get('/groupschedule/:groupID/:currDate/:numberOfDays', groupSchedValidationR
     }
 
     if (req.session.userID) { //authorised
-        groupService.getGroupSchedules(req.params.groupID, req.params.currDate, req.params.numberOfDays, req.session.userID, (result) => {
+        groupService.getGroupSchedules2(req.params.groupID, req.params.currDate, req.params.numberOfDays, req.session.userID, (result) => {
             logger.log({level: 'info', message: `Get group schedule - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, group: ${req.params.groupID}, date: ${req.params.currDate}, numDays: ${req.params.numberOfDays}`});
             res.send(result);
         })
@@ -506,8 +507,38 @@ app.post('/deleteevent', (req, res) => {
         res.sendStatus(401);
     }
 })
+
+/////////////////////////////////////////////////////////////////////
+/////getGroupPics
+///////////////////////////////////////////////////////////////////
+app.get('/grouppics/:groupID', (req, res) => {
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+    // const errors = validationResult(req);
+
+    // if (!errors.isEmpty()) { //validation errors
+    //     logger.log({level: 'warn', message: `Failed group schedule retreival, 422 Invalid input ${errors} - IP: ${ip}`});
+    //     return res
+    //         .status(422)
+    //         .json({
+    //             errors: errors.array()
+    //         });
+    // }
+
+    if (req.session.userID) { //authorised
+        groupService.getGroupProfilePics(req.session.userID, req.params.groupID, (result) => {
+            logger.log({level: 'info', message: `Get group profilePics - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, group: ${req.params.groupID}, date: ${req.params.currDate}, numDays: ${req.params.numberOfDays}`});
+            res.send(result);
+        })
+    } else { //unathorised
+        logger.log({level: 'warn', message: `Unathorised to get group profile pics, 401 IP: ${ip}`});
+        res.sendStatus(401);
+    }
+});
+
 // ///////////////////////////////TODO//////////////////////////////////////////
-// / ////////////// edit event edit group delete group delete event delete group
-// delete group member change password
+// / ////////////// edit event, edit group, delete group
+// delete group member, change password
 
 module.exports = app;
