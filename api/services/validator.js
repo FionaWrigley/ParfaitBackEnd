@@ -8,9 +8,9 @@ const {
 const loginValidationRules = () => {
   return [
     // username cannot be empty
-    body('user.email', "Invalid username or password").notEmpty().bail().isEmail().bail().trim().escape().normalizeEmail(),
+    body('email', "Invalid username or password").notEmpty().bail().isEmail().bail().trim().escape().normalizeEmail(),
     // password cannot be empty
-    body('user.password', 'Invalid username or password').notEmpty().bail().trim().escape(),
+    body('password', 'Invalid username or password').notEmpty().bail().trim().escape(),
   ]
 }
 

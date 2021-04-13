@@ -49,13 +49,19 @@ const dailyLimit = rateLimit({
     max: 1000 // limit each IP to 1000 requests per windowMs (1000 per 24 hours)
 });
 
+
 const app = express();
 
+
+
+
+
 app.use(session({
+    //proxy: true,
     name: "parfaitSession",
-    secret: 'keyboard cat',
-    resave: false,
-    saveUninitialized: false,
+    secret: 'donkey',
+    resave: true,
+    saveUninitialized: true,
     cookie: {
         httpOnly: true,
         secure: false,
@@ -64,13 +70,26 @@ app.use(session({
     }
 }))
 
-app.use(cors({origin: 'http://localhost:3000', credentials: true}));
-app.use(cookieParser());
-app.use(bodyParser.json({limit: '50mb'})); // support json encoded bodies
+
+
+app.use(cors({origin: process.env.ORIGIN, credentials: true}));
+
+
+// app.use(function(req, res) {
+    
+//     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE');
+
+//     res.setHeader('Access-Control-Allow-Credentials', true);
+// })
+
+
+//app.use(cookieParser());
+ app.use(bodyParser.json({limit: '50mb'})); // support json encoded bodies
 app.use(bodyParser.urlencoded({parameterLimit: 100000, extended: true, limit: '50mb'}));
 app.use(bodyParser.raw({limit: '50mb'}));
 app.use(express.static('public'));
-console.log(__dirname);
+
+
 // RATE LIMITING prevents test scripts hence is currently commmented out
 // app.use(secondLimit, dailyLimit); //returns error code 429 when either rate
 // limit reached
@@ -79,7 +98,17 @@ console.log(__dirname);
 // //////////////////////////Routes/////////////////////////////////////////////
 // /
 // /////////////////////////////////////////////////////////////////////////////
-// /
+
+app.get('/loggedin', (req, res) => {
+
+    if (req.session.userID) { //if session already exists
+        res.sendStatus(204); //return success - no content
+    }else{
+        res.sendStatus(401); //return not authorized
+    }
+})
+
+
 // /////////////////////////////////////////////////////////////////////////////
 // / //////////// login
 // //////////////////////////////////////////////////////////////////////////////
@@ -88,6 +117,7 @@ app.post('/login', loginValidationRules(), (req, res) => {
     // if session already exists, destroy existing session, and attempt auth with
     // new login details
 
+    console.log(req.body);
     if (req.session.userID) { //if session already exists
         delete req.session.userID; //remove existing user id and proceed with authentication
         delete req.session.userType;
@@ -99,27 +129,32 @@ app.post('/login', loginValidationRules(), (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
 
-        logger.log({level: 'warn', message: `Failed login attempt, 422 Invalid user name or password - IP: ${ip} Email: ${req.body.user.email}`});
+        logger.log({level: 'warn', message: `Failed login attempt, 422 Invalid user name or password - IP: ${ip} Email: ${req.body.email}`});
 
         return res
             .status(422)
             .json({errors: "Invalid username or password"});
     }
     //otherwise check login is a valid email / password combo
-    memberService.login(req.body.user.email, req.body.user.password, (result) => {
+    memberService.login(req.body.email, req.body.password, (result) => {
+
+        console.log('result', result);
+        console.log('member id ', result.memberID || 'error')
 
         if (result.memberID) { //member ID was returned - authentication successful
             req.session.userID = result.memberID;
             req.session.userType = result.userType;
 
-            logger.log({level: 'info', message: `Successful login, 204- IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, Email: ${req.body.user.email}`});
+
+
+            logger.log({level: 'info', message: `Successful login, 204- IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, Email: ${req.body.email}`});
             res.sendStatus(204); //return success - no content
         } else if (result === 401) { //authentication failure
-            logger.log({level: 'warn', message: `Failed login attempt, 401 - IP: ${ip} Email: ${req.body.user.email}`});
+            logger.log({level: 'warn', message: `Failed login attempt, 401 - IP: ${ip} Email: ${req.body.email}`});
             res.sendStatus('401'); //not authorized
         } else {
 
-            logger.log({level: 'Error', message: `Login attempt, 500 - ERR: ${result}, IP: ${ip} Email: ${req.body.user.email}`});
+            logger.log({level: 'Error', message: `Login attempt, 500 - ERR: ${result}, IP: ${ip} Email: ${req.body.email}`});
             res.send(500); //an error has occured in execution
         }
     });
@@ -156,6 +191,9 @@ app.get('/logout', (req, res) => {
 // //////////////////////////////////////////////////////////////////////////////
 app.get('/groups', (req, res) => {
 
+    console.log('in group req');
+    console.log('user id ', req.session.userID)
+    console.log('user id ', req.session.id)
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     if (req.session.userID) { //user is authorized
@@ -163,6 +201,8 @@ app.get('/groups', (req, res) => {
 
             logger.log({level: 'info', message: `Get groups - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
 
+            // res.setHeader('Access-Control-Allow-Headers', 'content-type,cache-control');
+            // res.setHeader("Cache-Control", "max-age=31536000, immutable");
             res.send(result); //send group list
         })
     } else {
@@ -295,6 +335,29 @@ app.get('/profilepic', (req, res) => {
             console.log(result);
             
             res.sendFile(__dirname + '\\public\\' + result[0].profilePicPath); 
+        })      
+    } else { //not authorized
+        logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
+        res.sendStatus(401);
+    }
+});
+
+// /////////////////////////////////////////////////////////////////////////////
+// / //////////////// get profile picture for authorized user
+// //////////////////////////////////////////////////////////////////////////////
+app.get('/profilepic2', (req, res) => {
+
+    console.log("profile pic 2")
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+    if (req.session.userID) { //authorized
+        memberService.getProfilePic(req.session.userID, (result) => {
+            logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+            console.log(result);
+            
+            console.log(result[0]);
+            res.send(result[0]); 
         })      
     } else { //not authorized
         logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
