@@ -232,7 +232,7 @@ app.post('/creategroup', createGroupSanitize(), (req, res) => {
 
     if (req.session.userID) { //authorized
 
-        group.createGroup(req.body.group, req.session.userID, (result) => {
+        group.createGroup(req.body, req.session.userID, (result) => {
             logger.log({level: 'info', message: `Create group - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, groupID:  ${result.groupID}`});
             res.sendStatus(200);
         })

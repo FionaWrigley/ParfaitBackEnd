@@ -69,8 +69,8 @@ const groupSchedValidationRules = () => {
 
 const createGroupSanitize = () => {
   return [
-    body('group.name', "Group name cannot be empty").notEmpty().trim().escape(),
-    body('group.description').trim().escape(),
+    body('name', "Group name cannot be empty").notEmpty().trim().escape(),
+    body('description').trim().escape(),
   ]
 }
 
