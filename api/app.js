@@ -65,6 +65,7 @@ const app = express();
 
 var sessionStore = new MySQLStore(_db);
 app.enable('trust proxy', 1);
+
 app.use(session({
     proxy: true,
     name: "parfaitSession",
