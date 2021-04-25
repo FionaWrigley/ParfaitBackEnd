@@ -59,9 +59,9 @@ const dailyLimit = rateLimit({
 });
 
 const app = express();
-
+app.set('trust proxy', 1);
 app.use(session({
-    //proxy: true,
+    proxy: true,
     name: "parfaitSession",
     secret: process.env.SESSION_SECRET,
     resave: true,
@@ -93,6 +93,10 @@ app.use(express.static('public'));
 // //////////////////////////Routes/////////////////////////////////////////////
 // /
 // /////////////////////////////////////////////////////////////////////////////
+app.get('/', (req, res) => 
+    res.send("Everybody love Parfait")
+
+)
 
 app.get('/loggedin', (req, res) => {
 
