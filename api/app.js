@@ -64,7 +64,7 @@ const dailyLimit = rateLimit({
 const app = express();
 
 var sessionStore = new MySQLStore(_db);
-app.set('trust proxy', 1);
+app.enable('trust proxy', 1);
 app.use(session({
     proxy: true,
     name: "parfaitSession",
@@ -73,10 +73,10 @@ app.use(session({
     saveUninitialized: true,
     store: sessionStore,
     cookie: {
-        httpOnly: true,
+        // httpOnly: true,
         secure: true,
         maxAge: 60000 * 60 * 48,
-        path: "/"
+        // path: "/"
     }
 }))
 
