@@ -64,7 +64,7 @@ const dailyLimit = rateLimit({
 const app = express();
 
 var sessionStore = new MySQLStore(_db);
-app.set('trust proxy', 1);
+app.enable('trust proxy');
 
 app.use(session({
     proxy: true,
