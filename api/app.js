@@ -70,14 +70,14 @@ app.use(session({
     proxy: true,
     name: "parfaitSession",
     secret: process.env.SESSION_SECRET,
-    //resave: true,
-    //saveUninitialized: true,
+    resave: true,
+    saveUninitialized: true,
     store: sessionStore,
     cookie: {
         //httpOnly: false,
         secure: true,
         //SameSite=None,
-        sameSite='Lax',
+        //sameSite='Lax',
         maxAge: 60000 * 60 * 48,
         // path: "/"
     }
@@ -86,9 +86,9 @@ app.use(session({
 
 app.use(cors({
     origin: process.env.ORIGIN, 
-    credentials: true
-    //methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
-    //allowedHeaders: ["Content-Type", "Authorization", "x-requested-with"]
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-requested-with"]
 }));
 
 //app.use(cookieParser());
