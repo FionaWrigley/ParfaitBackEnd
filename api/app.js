@@ -76,7 +76,7 @@ app.use(session({
     cookie: {
         httpOnly: false,
         secure: true,
-        SameSite=None,
+        //SameSite=None,
         maxAge: 60000 * 60 * 48,
         // path: "/"
     }
@@ -85,7 +85,7 @@ app.use(session({
 
 app.use(cors({
     origin: process.env.ORIGIN, 
-    credentials: true, 
+    credentials: true
     //methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
     //allowedHeaders: ["Content-Type", "Authorization", "x-requested-with"]
 }));
