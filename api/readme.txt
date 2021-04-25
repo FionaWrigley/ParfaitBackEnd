@@ -18,6 +18,10 @@ Update .env file to include a value for
 
 SESSION_SECRET
 
+Update .env file to include the origin of your front end
+
+ORIGIN
+
 Navigate into api folder.
 
 Use command 'npm install' to pull in dependencies

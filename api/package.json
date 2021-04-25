@@ -1,15 +1,15 @@
 {
-  "name": "api",
+  "name": "parfait",
   "version": "1.0.0",
-  "description": "",
+  "description": "////////////////////////////////////////////////////////\r Parfait API\r ///////////////////////////////////////////////////////////",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon app.js",
-    "start-dev": "nodemon app.js",
+    "start": "nodemon server.js",
+    "start-dev": "nodemon server.js",
     "test": "jest --detectOpenHandles --forceExit",
     "test:watch": "jest --watch"
   },
-  "author": "",
+  "author": "Fiona Wrigley",
   "license": "ISC",
   "dependencies": {
     "cookie-parser": "^1.4.5",
@@ -25,7 +25,7 @@
     "image-data-uri": "^2.0.1",
     "multer": "^1.4.2",
     "mysql": "^2.18.1",
-    "react-images-upload": "^1.2.8",
+    "react-images-upload": "1.2.8",
     "sharp": "^0.28.1",
     "unescape": "^1.0.1",
     "validator": "^13.5.2",
@@ -42,5 +42,11 @@
     "coveragePathIgnorePatterns": [
       "/node_modules/"
     ]
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "engines": {
+    "node": "12.x"
   }
 }
