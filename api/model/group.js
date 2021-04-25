@@ -326,10 +326,7 @@ deleteGroupMember: function (memberID, groupID, cb) {
         });
 
     },
-
-   
-
-
+    
     getGroupSchedule: function (groupID, minDate, maxDate, userID, cb){
 
         console.log('group model')

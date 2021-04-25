@@ -11,10 +11,12 @@ const groupService = require('./services/groupservices');
 const member = require('./model/member');
 const event = require('./model/event');
 const path = require('path');
-var decode = require('unescape');
+//var decode = require('unescape');
 const rateLimit = require("express-rate-limit");
 const {logger} = require('./services/logger');
 const multer = require('multer');
+const sharp = require('sharp');
+const fs = require('fs');
 const {unescape, validationResult} = require('express-validator');
 const {default: validator} = require('validator');
 const {
@@ -30,9 +32,16 @@ const {de} = require('date-fns/locale');
 
 //set up file storage options
 const storage = multer.diskStorage({
-    destination: './public/images',
+    destination: './public/temp',
     filename: function (req, file, cb) {
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+        const fileTypes = /jpeg|jpg|png|gif|tiff|webp|psd/;
+        const extName = fileTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimeType = fileTypes.test(file.mimetype);
+        if(extName){
+            cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname).toLowerCase());
+        }else{
+            cb(null, 'ERROR');
+        }
     }
 });
 const upload = multer({storage: storage});
@@ -49,17 +58,12 @@ const dailyLimit = rateLimit({
     max: 1000 // limit each IP to 1000 requests per windowMs (1000 per 24 hours)
 });
 
-
 const app = express();
-
-
-
-
 
 app.use(session({
     //proxy: true,
     name: "parfaitSession",
-    secret: 'donkey',
+    secret: process.env.SESSION_SECRET,
     resave: true,
     saveUninitialized: true,
     cookie: {
@@ -71,9 +75,7 @@ app.use(session({
 }))
 
 
-
 app.use(cors({origin: process.env.ORIGIN, credentials: true}));
-
 
 // app.use(function(req, res) {
     
@@ -84,7 +86,7 @@ app.use(cors({origin: process.env.ORIGIN, credentials: true}));
 
 
 //app.use(cookieParser());
- app.use(bodyParser.json({limit: '50mb'})); // support json encoded bodies
+app.use(bodyParser.json({limit: '50mb'})); // support json encoded bodies
 app.use(bodyParser.urlencoded({parameterLimit: 100000, extended: true, limit: '50mb'}));
 app.use(bodyParser.raw({limit: '50mb'}));
 app.use(express.static('public'));
@@ -116,8 +118,6 @@ app.post('/login', loginValidationRules(), (req, res) => {
 
     // if session already exists, destroy existing session, and attempt auth with
     // new login details
-
-    console.log(req.body);
     if (req.session.userID) { //if session already exists
         delete req.session.userID; //remove existing user id and proceed with authentication
         delete req.session.userType;
@@ -138,14 +138,9 @@ app.post('/login', loginValidationRules(), (req, res) => {
     //otherwise check login is a valid email / password combo
     memberService.login(req.body.email, req.body.password, (result) => {
 
-        console.log('result', result);
-        console.log('member id ', result.memberID || 'error')
-
         if (result.memberID) { //member ID was returned - authentication successful
             req.session.userID = result.memberID;
             req.session.userType = result.userType;
-
-
 
             logger.log({level: 'info', message: `Successful login, 204- IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, Email: ${req.body.email}`});
             res.sendStatus(204); //return success - no content
@@ -191,18 +186,12 @@ app.get('/logout', (req, res) => {
 // //////////////////////////////////////////////////////////////////////////////
 app.get('/groups', (req, res) => {
 
-    console.log('in group req');
-    console.log('user id ', req.session.userID)
-    console.log('user id ', req.session.id)
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     if (req.session.userID) { //user is authorized
         group.getGroups(req.session.userID, (result) => {
 
             logger.log({level: 'info', message: `Get groups - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-
-            // res.setHeader('Access-Control-Allow-Headers', 'content-type,cache-control');
-            // res.setHeader("Cache-Control", "max-age=31536000, immutable");
             res.send(result); //send group list
         })
     } else {
@@ -332,7 +321,6 @@ app.get('/profilepic', (req, res) => {
     if (req.session.userID) { //authorized
         memberService.getProfilePic(req.session.userID, (result) => {
             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-            console.log(result);
             
             res.sendFile(__dirname + '\\public\\' + result[0].profilePicPath); 
         })      
@@ -347,16 +335,11 @@ app.get('/profilepic', (req, res) => {
 // //////////////////////////////////////////////////////////////////////////////
 app.get('/profilepic2', (req, res) => {
 
-    console.log("profile pic 2")
-
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     if (req.session.userID) { //authorized
         memberService.getProfilePic(req.session.userID, (result) => {
             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-            console.log(result);
-            
-            console.log(result[0]);
             res.send(result[0]); 
         })      
     } else { //not authorized
@@ -379,16 +362,54 @@ app.post('/profilepic', (req, res, next) => {
         res.sendStatus(401); //not authorized
     }
 }, upload.single('profilepic'), //get file (Multer function)
-        function (req, res, next) {
+       async function (req, res, next) {
 
-            let path = req.file.path.replace('public\\',""); //trim the public folder off path
-            console
-    memberService.updatePic(req.session.userID, path, (result) => {
-        logger.log({level: 'info', message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-        res.sendStatus(204); //success
-    })
+            const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+            if(req.file.path == 'public\\temp\\ERROR'){
+                logger.log({level: 'info', message: `Update profile pic - Invalid file type ${req.file.path} IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+                res.sendStatus(422); //Invalid file type
+            }else{
+
+                //resize image to 100px x 100px
+                await sharp(__dirname +"\\"+ req.file.path)
+                .resize(100, 100, {
+                  fit: sharp.fit.cover, //maintain image aspect, crop to fit size
+                  position: sharp.strategy.entropy, //indentify light and skin tones to centre image
+                 })
+                 .withMetadata() //retains exif data, required for image orientation
+                 .toFile(__dirname + "\\public\\images\\100px"+ req.file.filename)
+                .catch(err =>  logger.log({level: 'err', message: `Update profile pic - ERROR: ${err} IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`}));
+
+                //remove temporary large image
+                fs.unlink(__dirname +"\\"+ req.file.path, (err) => {
+                    if (err) {
+                      console.error(err)
+                      return;
+                    }
+                })
+
+                //get path for previous image
+                memberService.getProfilePic(req.session.userID, (result) => {
+
+                    if(result[0].profilePicPath != ''){ //previous image exists
+                    let fullpath = "public\\" + result[0].profilePicPath; 
+                    fs.unlink(fullpath, (err) => { //delete previous image
+                        if (err) {
+                          console.error(err)
+                          return;
+                        }
+                    })}
+                }) 
+                //add new image path
+                let newpath = "images\\100px"+ req.file.filename; //trim the public folder off path
+                memberService.updatePic(req.session.userID, newpath, (result) => {
+                    logger.log({level: 'info', message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+                    console.log(result);
+                    res.sendStatus(204); //success       
+        })  
+    }
 })
-
 // /////////////////////////////////////////////////////////////////////////////
 // / //////////////// get schedule for a given date for logged in user
 // //////////////////////////////////////////////////////////////////////////////
@@ -512,17 +533,6 @@ app.post('/createevent', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
     let eventObj = req.body.form;
-    console.log(eventObj);
-    //input fields are invalid
-    // const errors = validationResult(req);
-    // if (!errors.isEmpty()) {
-    //     logger.log({level: 'warn', message: `Failed group creation, 422 Invalid input ${errors} - IP: ${ip}`});
-    //     return res
-    //         .status(422)
-    //         .json({
-    //             errors: errors.array()
-    //         });
-    // }
 
     if (req.session.userID) { //authorized
 
@@ -541,23 +551,7 @@ app.post('/createevent', (req, res) => {
 ///////////////////////////////////////////////////////////////////////////////////
 app.post('/deleteevent', (req, res) => {
 
-    console.log('eventID', req.body.eventID);
-    
-
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-  
-    
-    // const errors = validationResult(req);
-
-    //if posted fields are not valid send error messages
-    // if (!errors.isEmpty()) {
-    //     logger.log({level: 'warn', message: `Failed registration, 422 Invalid input ${errors} - IP: ${ip} Email: ${req.body.user.email}`});
-    //     return res
-    //         .status(422)
-    //         .json({
-    //             errors: errors.array()
-    //         });
-    // }
 
     if (req.session.userID) { //authorised
         event.deleteEvent(req.body.eventID, req.session.userID, (result) => {
