@@ -87,7 +87,7 @@ app.use(cors({
     origin: process.env.ORIGIN, 
     credentials: true, 
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]}));
+    allowedHeaders: ["Content-Type", "Authorization", "x-requested-with"]}));
 
 //app.use(cookieParser());
 app.use(bodyParser.json({limit: '50mb'})); // support json encoded bodies
