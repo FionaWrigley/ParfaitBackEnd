@@ -74,7 +74,7 @@ app.use(session({
     saveUninitialized: true,
     store: sessionStore,
     cookie: {
-        //httpOnly: false,
+        httpOnly: false,
         secure: true,
         //SameSite=None,
         //sameSite='Lax',
