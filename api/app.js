@@ -1,10 +1,13 @@
 const express = require('express');
 require('dotenv').config();
 const datefns = require('date-fns');
+//const favicon = require('serve-favicon');
+var _db = require('./model/dbconfig');
 const cors = require('cors');
 const group = require('./model/group');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+var MySQLStore = require('express-mysql-session')(session);
 const cookieParser = require('cookie-parser');
 const memberService = require('./services/memberservices');
 const groupService = require('./services/groupservices');
@@ -49,7 +52,7 @@ const upload = multer({storage: storage});
 //set up rate limits
 const secondLimit = rateLimit({
     windowMs: 1000, // 1 second
-    max: 5 // limit each IP to 5 requests per 1000 windowMs - 3 per second
+    max: 20 // limit each IP to 20 requests per 1000 windowMs - 20 per second
     //MORE THAN 1 PER SECOND REQUIRED TO HANDLE MULTIPLE COMPONENTS RENDERING / FETCHING AT ONCE
 });
 
@@ -59,6 +62,8 @@ const dailyLimit = rateLimit({
 });
 
 const app = express();
+
+var sessionStore = new MySQLStore(_db);
 app.set('trust proxy', 1);
 app.use(session({
     proxy: true,
@@ -66,9 +71,10 @@ app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: true,
     saveUninitialized: true,
+    store: sessionStore,
     cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV == "production" ? true : false,
+        secure: true,
         maxAge: 60000 * 60 * 48,
         path: "/"
     }
@@ -76,7 +82,6 @@ app.use(session({
 
 
 app.use(cors({origin: process.env.ORIGIN, credentials: true}));
-
 
 //app.use(cookieParser());
 app.use(bodyParser.json({limit: '50mb'})); // support json encoded bodies
@@ -95,7 +100,6 @@ app.use(express.static('public'));
 // /////////////////////////////////////////////////////////////////////////////
 app.get('/', (req, res) => 
     res.send("Everybody love Parfait")
-
 )
 
 app.get('/loggedin', (req, res) => {
@@ -106,7 +110,6 @@ app.get('/loggedin', (req, res) => {
         res.sendStatus(401); //return not authorized
     }
 })
-
 
 // /////////////////////////////////////////////////////////////////////////////
 // / //////////// login
