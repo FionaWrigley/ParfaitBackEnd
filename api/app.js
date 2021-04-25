@@ -49,7 +49,7 @@ const upload = multer({storage: storage});
 //set up rate limits
 const secondLimit = rateLimit({
     windowMs: 1000, // 1 second
-    max: 3 // limit each IP to 3 requests per 1000 windowMs - 3 per second
+    max: 5 // limit each IP to 5 requests per 1000 windowMs - 3 per second
     //MORE THAN 1 PER SECOND REQUIRED TO HANDLE MULTIPLE COMPONENTS RENDERING / FETCHING AT ONCE
 });
 
@@ -68,7 +68,7 @@ app.use(session({
     saveUninitialized: true,
     cookie: {
         httpOnly: true,
-        secure: false,
+        secure: process.env.NODE_ENV == "production" ? true : false,
         maxAge: 60000 * 60 * 48,
         path: "/"
     }
@@ -76,13 +76,6 @@ app.use(session({
 
 
 app.use(cors({origin: process.env.ORIGIN, credentials: true}));
-
-// app.use(function(req, res) {
-    
-//     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE');
-
-//     res.setHeader('Access-Control-Allow-Credentials', true);
-// })
 
 
 //app.use(cookieParser());
@@ -93,7 +86,7 @@ app.use(express.static('public'));
 
 
 // RATE LIMITING prevents test scripts hence is currently commmented out
-// app.use(secondLimit, dailyLimit); //returns error code 429 when either rate
+ app.use(secondLimit, dailyLimit); //returns error code 429 when either rate
 // limit reached
 // /////////////////////////////////////////////////////////////////////////////
 // /
