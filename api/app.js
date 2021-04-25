@@ -70,14 +70,14 @@ app.use(session({
     proxy: true,
     name: "parfaitSession",
     secret: process.env.SESSION_SECRET,
-    resave: true,
-    saveUninitialized: true,
+    //resave: true,
+    //saveUninitialized: true,
     store: sessionStore,
     cookie: {
-        httpOnly: false,
+        //httpOnly: false,
         secure: true,
         //SameSite=None,
-        SameSite=Lax,
+        //SameSite=Lax,
         maxAge: 60000 * 60 * 48,
         // path: "/"
     }
