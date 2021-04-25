@@ -8,4 +8,5 @@ node_modules
 
 #logs
 npm-debug.log
-logs
+combined.log
+error.log
