@@ -65,7 +65,6 @@ const app = express();
 
 var sessionStore = new MySQLStore(_db);
 app.enable('trust proxy');
-
 app.use(session({
     proxy: true,
     name: "parfaitSession",
@@ -75,11 +74,10 @@ app.use(session({
     store: sessionStore,
     cookie: {
         //httpOnly: false,
-        secure: true,
+        secure: false,
         //SameSite=None,
         //sameSite='Lax',
         maxAge: 60000 * 60 * 48,
-        // path: "/"
     }
 }))
 
@@ -99,7 +97,7 @@ app.use(express.static('public'));
 
 
 // RATE LIMITING prevents test scripts hence is currently commmented out
- app.use(secondLimit, dailyLimit); //returns error code 429 when either rate
+ //app.use(secondLimit, dailyLimit); //returns error code 429 when either rate
 // limit reached
 // /////////////////////////////////////////////////////////////////////////////
 // /
@@ -124,6 +122,8 @@ app.get('/loggedin', (req, res) => {
 // //////////////////////////////////////////////////////////////////////////////
 app.post('/login', loginValidationRules(), (req, res) => {
 
+    console.log('in login')
+    console.log('session id ',req.session.id)
     // if session already exists, destroy existing session, and attempt auth with
     // new login details
     if (req.session.userID) { //if session already exists
@@ -146,6 +146,7 @@ app.post('/login', loginValidationRules(), (req, res) => {
     //otherwise check login is a valid email / password combo
     memberService.login(req.body.email, req.body.password, (result) => {
 
+        console.log('result in login ', result)
         if (result.memberID) { //member ID was returned - authentication successful
             req.session.userID = result.memberID;
             req.session.userType = result.userType;
@@ -194,6 +195,7 @@ app.get('/logout', (req, res) => {
 // //////////////////////////////////////////////////////////////////////////////
 app.get('/groups', (req, res) => {
 
+    console.log('session id ',req.session.id)
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     if (req.session.userID) { //user is authorized
@@ -281,12 +283,13 @@ app.get('/profile', (req, res) => {
 // ////////////////////////////////////////////////////////////////////////////
 app.post('/profile', profileValidationRules(), (req, res) => {
 
+    console.log("req.body", req.body);
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
     //fields are not valid return error messages
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        logger.log({level: 'warn', message: `Failed profile update, 422 Invalid input ${errors} - IP: ${ip} Email: ${req.body.user.email}`});
+        logger.log({level: 'warn', message: `Failed profile update, 422 Invalid input ${errors} - IP: ${ip} Email: ${req.body.email}`});
         return res
             .status(422)
             .json({
@@ -297,11 +300,11 @@ app.post('/profile', profileValidationRules(), (req, res) => {
     if (req.session.userID) { //authorized
 
         //posted fields are valid, check if email is already in use
-        member.memberExists(req.body.user.email, (result) => {
+        member.memberExists(req.body.email, (result) => {
 
             if (result.memberID === 0 || result.memberID === req.session.userID) { //email not in use or in use by current user
 
-                member.updateMember(req.body.user, (result) => {
+                member.updateMember(req.body, (result) => {
                     logger.log({level: 'info', message: `Update profile - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
                     res.sendStatus(204);
                 })
@@ -409,11 +412,12 @@ app.post('/profilepic', (req, res, next) => {
                         }
                     })}
                 }) 
+                console.log('made it close to the end')
                 //add new image path
                 let newpath = "images\\100px"+ req.file.filename; //trim the public folder off path
                 memberService.updatePic(req.session.userID, newpath, (result) => {
                     logger.log({level: 'info', message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-                    console.log(result);
+                    console.log('made it to the end');
                     res.sendStatus(204); //success       
         })  
     }

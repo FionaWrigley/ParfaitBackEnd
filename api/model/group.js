@@ -24,13 +24,13 @@ module.exports = {
     },
 
     //create a new group including update of group members table
-    // createGroup: function (groupName, groupDescription, groupPic, userList, cb) {
+    // createGroup: function (groupName, groupDescription, userList, cb) {
     createGroup: function (group, userID, cb) {
 
         let userList = group.members;
-        let values = [group.name, group.description, null];
+        let values = [group.name, group.description];
 
-        var sql = 'INSERT INTO `parfaitgroup`(`groupName`, `groupDescription`, `groupPic`) VALUES (?)';
+        var sql = 'INSERT INTO `parfaitgroup`(`groupName`, `groupDescription`) VALUES (?)';
         
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
