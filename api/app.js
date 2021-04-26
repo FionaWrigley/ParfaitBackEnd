@@ -74,7 +74,7 @@ app.use(session({
     store: sessionStore,
     cookie: {
         //httpOnly: false,
-        secure: false,
+        secure: true,
         //SameSite=None,
         //sameSite='Lax',
         maxAge: 60000 * 60 * 48,
