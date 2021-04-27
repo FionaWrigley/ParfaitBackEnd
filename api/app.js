@@ -63,8 +63,15 @@ const dailyLimit = rateLimit({
 
 const app = express();
 
+app.use(cors({
+    origin: process.env.ORIGIN, 
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-requested-with"]
+}));
+
 var sessionStore = new MySQLStore(_db);
-app.enable('trust proxy');
+app.enable('trust proxy', true);
 app.use(session({
     proxy: true,
     name: "parfaitSession",
@@ -82,12 +89,7 @@ app.use(session({
 }))
 
 
-app.use(cors({
-    origin: process.env.ORIGIN, 
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-requested-with"]
-}));
+
 
 //app.use(cookieParser());
 app.use(bodyParser.json({limit: '50mb'})); // support json encoded bodies
