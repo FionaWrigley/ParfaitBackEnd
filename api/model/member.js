@@ -156,7 +156,6 @@ module.exports = {
                 });
                 throw err;
             }
-            console.log('results ', results)
             return cb(results);
         })
     },

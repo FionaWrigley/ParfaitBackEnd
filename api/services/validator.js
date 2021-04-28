@@ -32,19 +32,18 @@ const profileValidationRules = () => {
 const registerValidationRules = () => {
   return [
     //fname must be alpha
-    body('user.fname', "Invalid Name").isAlpha().bail().trim().escape(),
+    body('fname', "Invalid Name").isAlpha().bail().trim().escape(),
     //lname must be alpha
-    body('user.lname', "Invalid Name").isAlpha().bail().trim().escape(),
+    body('lname', "Invalid Name").isAlpha().bail().trim().escape(),
     // username cannot be empty and must be a valid email
-    body('user.email', "Invalid username or password").notEmpty().bail().isEmail().bail().trim().escape().normalizeEmail(),
+    body('email', "Invalid username or password").notEmpty().bail().isEmail().bail().trim().escape().normalizeEmail(),
     // phone must be a min of 10 digits
-    body('user.phone', "Phone number should be 10 digits and contain only numbers").isLength({
+    body('phone', "Phone number should be 10 digits and contain only numbers").isLength({
       min: 10
     }).bail().isNumeric().bail().trim().escape(),
     //Password should contain a minimum of 8 characters, including one upper case letter, one lower case letter, and one number
-    body('user.password', "Password should contain a minimum of 8 characters, including one upper case lett" +
-      "er, one lower case letter, and one number.").isStrongPassword().trim().escape(),
-    body('user.userType', "Invalid user type").trim().escape(),
+    body('password', "Password should contain a minimum of 8 characters, including one upper case lett" +
+      "er, one lower case letter, and one number.").isStrongPassword().trim().escape()
   ]
 }
 

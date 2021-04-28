@@ -81,14 +81,13 @@ app.use(session({
     store: sessionStore,
     cookie: {
         httpOnly: false,
+        //secure: false,
         secure: true,
         sameSite:'none',
-        //sameSite='Lax',
         maxAge: 60000 * 60 * 48,
+        domain: 'http://parfait-findthegaps.herokuapp.com'
     }
 }))
-
-
 
 
 //app.use(cookieParser());
@@ -124,8 +123,6 @@ app.get('/loggedin', (req, res) => {
 // //////////////////////////////////////////////////////////////////////////////
 app.post('/login', loginValidationRules(), (req, res) => {
 
-    console.log('in login')
-    console.log('session id ',req.session.id)
     // if session already exists, destroy existing session, and attempt auth with
     // new login details
     if (req.session.userID) { //if session already exists
@@ -148,7 +145,6 @@ app.post('/login', loginValidationRules(), (req, res) => {
     //otherwise check login is a valid email / password combo
     memberService.login(req.body.email, req.body.password, (result) => {
 
-        console.log('result in login ', result)
         if (result.memberID) { //member ID was returned - authentication successful
             req.session.userID = result.memberID;
             req.session.userType = result.userType;
@@ -165,7 +161,6 @@ app.post('/login', loginValidationRules(), (req, res) => {
         }
     });
 });
-
 // /////////////////////////////////////////////////////////////////////////////
 // / ////////////// logout and destroy session
 // //////////////////////////////////////////////////////////////////////////////
@@ -197,7 +192,6 @@ app.get('/logout', (req, res) => {
 // //////////////////////////////////////////////////////////////////////////////
 app.get('/groups', (req, res) => {
 
-    console.log('session id ',req.session.id)
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     if (req.session.userID) { //user is authorized
@@ -250,7 +244,6 @@ app.post('/creategroup', createGroupSanitize(), (req, res) => {
 app.get('/users/:searchVal', sanitizeSearchVal(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-
     if (req.session.userID) { //authorized
         member.searchMembers(req.params.searchVal, req.session.userID, (result) => {
             logger.log({level: 'info', message: `Search members - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`});
@@ -285,7 +278,6 @@ app.get('/profile', (req, res) => {
 // ////////////////////////////////////////////////////////////////////////////
 app.post('/profile', profileValidationRules(), (req, res) => {
 
-    console.log("req.body", req.body);
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
     //fields are not valid return error messages
@@ -299,20 +291,15 @@ app.post('/profile', profileValidationRules(), (req, res) => {
             });
     }
 
-    if (req.session.userID) { //authorized
-
+    if (req.session.userID){ //authorized
         //posted fields are valid, check if email is already in use
         member.memberExists(req.body.email, (result) => {
-
             if (result.memberID === 0 || result.memberID === req.session.userID) { //email not in use or in use by current user
-
                 member.updateMember(req.body, (result) => {
                     logger.log({level: 'info', message: `Update profile - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
                     res.sendStatus(204);
                 })
-
             } else { //email already in use
-
                 logger.log({level: 'warn', message: `Failed profile update, email already in use by another account, 409 - search users - IP: ${ip}`});
                 res.sendStatus('409');
             }
@@ -414,12 +401,10 @@ app.post('/profilepic', (req, res, next) => {
                         }
                     })}
                 }) 
-                console.log('made it close to the end')
                 //add new image path
                 let newpath = "images\\100px"+ req.file.filename; //trim the public folder off path
                 memberService.updatePic(req.session.userID, newpath, (result) => {
                     logger.log({level: 'info', message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-                    console.log('made it to the end');
                     res.sendStatus(204); //success       
         })  
     }
@@ -462,7 +447,6 @@ app.get('/scheduleday/:date', scheduleDayValidationRules(), (req, res) => {
 // /  get group schedules for selected group of logged in user for given
 // duration
 // /////////////////////////////////////////////////////////////////////////////
-// /
 app.get('/groupschedule/:groupID/:currDate/:numberOfDays', groupSchedValidationRules(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
@@ -505,7 +489,7 @@ app.post('/register', registerValidationRules(), (req, res) => {
 
     //if posted fields are not valid send error messages
     if (!errors.isEmpty()) {
-        logger.log({level: 'warn', message: `Failed registration, 422 Invalid input ${errors} - IP: ${ip} Email: ${req.body.user.email}`});
+        logger.log({level: 'warn', message: `Failed registration, 422 Invalid input ${errors} - IP: ${ip} Email: ${req.body.email}`});
         return res
             .status(422)
             .json({
@@ -514,19 +498,21 @@ app.post('/register', registerValidationRules(), (req, res) => {
     }
 
     //posted fields are valid, check if email is already in use
-    member.memberExists(req.body.user.email, (result) => {
-
+    member.memberExists(req.body.email, (result) => {
         if (result.memberID > 0) { //email already in use
-
             logger.log({level: 'warn', message: `Failed registration attempt, email already in use, 409 - search users - IP: ${ip}`});
             res.sendStatus('409');
 
         } else { //email not already in use, proceed with create member
 
-            member.createMember(req.body.user, (userID) => {
+                          let user = {...req.body, 
+                                        userType: "Member"}
+                        
+
+            member.createMember(user, (userID) => {
                 if (userID > 0) {
                     req.session.userID = userID; //create session userID to log in automatically
-                    req.session.userType = req.body.user.userType; //create session userType
+                    req.session.userType = user.userType; //create session userType
                     logger.log({level: 'info', message: `Register - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
                     res.sendStatus(204); //success - no content
 
@@ -542,7 +528,6 @@ app.post('/register', registerValidationRules(), (req, res) => {
 // /////////////////////////////////////////////////////////////////////////////
 // / ////////// create new event
 // //////////////////////////////////////////////////////////////////////////////
-
 app.post('/createevent', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
@@ -585,17 +570,6 @@ app.post('/deleteevent', (req, res) => {
 app.get('/grouppics/:groupID', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-
-    // const errors = validationResult(req);
-
-    // if (!errors.isEmpty()) { //validation errors
-    //     logger.log({level: 'warn', message: `Failed group schedule retreival, 422 Invalid input ${errors} - IP: ${ip}`});
-    //     return res
-    //         .status(422)
-    //         .json({
-    //             errors: errors.array()
-    //         });
-    // }
 
     if (req.session.userID) { //authorised
         groupService.getGroupProfilePics(req.session.userID, req.params.groupID, (result) => {

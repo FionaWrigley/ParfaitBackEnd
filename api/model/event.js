@@ -348,13 +348,6 @@ module.exports = {
     },
 
     getGroupEvents: function (minDate, maxDate, userList, cb){
-
-        console.log('get group events model')
-        //console.log('gid ', groupID)
-        console.log('mindate ', minDate)
-        console.log('maxdate ', maxDate)
-        console.log('userList ', userList)
-
    
             //get all events for all users in group from min date to max date
             sql = 'SELECT eventmember.memberID, eventmember.acceptedFlag, event.*'
@@ -382,7 +375,6 @@ module.exports = {
                       });
                     throw error; 
                 }
-                console.log('query results ', results)
                 return cb(results);
             }) 
     },

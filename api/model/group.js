@@ -329,12 +329,6 @@ deleteGroupMember: function (memberID, groupID, cb) {
     
     getGroupSchedule: function (groupID, minDate, maxDate, userID, cb){
 
-        console.log('group model')
-        console.log('gid ', groupID)
-        console.log('mindate ', minDate)
-        console.log('maxdate ', maxDate)
-        console.log('userID ', userID)
-
         //check the user is in the group ergo can retrieve group records
         let sql = 'SELECT * FROM `groupmember` WHERE memberID = ? AND groupID = ?';
         let values = [
@@ -379,7 +373,6 @@ deleteGroupMember: function (memberID, groupID, cb) {
                       });
                     throw error; 
                 }
-                console.log('query results ', results)
                 return cb(results);
             }) 
             }else{//user is not in group and should not get schedule data
