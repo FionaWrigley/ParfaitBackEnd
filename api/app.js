@@ -85,7 +85,7 @@ app.use(session({
         secure: true,
         sameSite:'none',
         maxAge: 60000 * 60 * 48,
-        //domain: 'https://parfait-findthegaps.herokuapp.com'
+        domain: '.parfait-coral.vercel.app'
     }
 }))
 
