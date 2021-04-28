@@ -77,7 +77,7 @@ app.use(session({
     name: "parfaitSession",
     secret: process.env.SESSION_SECRET,
     resave: true,
-    saveUninitialized: true,
+    saveUninitialized: false,
     store: sessionStore,
     cookie: {
         httpOnly: false,
@@ -85,7 +85,7 @@ app.use(session({
         secure: true,
         sameSite:'none',
         maxAge: 60000 * 60 * 48,
-        domain: 'parfait-findthegaps.herokuapp.com'
+        domain: 'https://parfait-findthegaps.herokuapp.com'
     }
 }))
 
