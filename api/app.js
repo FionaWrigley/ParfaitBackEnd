@@ -76,7 +76,7 @@ app.use(session({
     proxy: true,
     name: "parfaitSession",
     secret: process.env.SESSION_SECRET,
-    resave: true,
+    resave: false,
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
@@ -85,7 +85,7 @@ app.use(session({
         secure: true,
         sameSite:'none',
         maxAge: 60000 * 60 * 48,
-        domain: '.parfait-coral.vercel.app'
+        //domain: 'parfait-coral.vercel.app'
     }
 }))
 
