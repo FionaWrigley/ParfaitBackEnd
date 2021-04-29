@@ -67,7 +67,7 @@ app.use(cors({
     origin: process.env.ORIGIN, 
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
-    allowedHeaders: ["Origin","origin", "Content-Type", "Authorization", "x-requested-with"]
+    allowedHeaders: ["Origin", "Content-Type", "Authorization", "x-requested-with"]
 }));
 
 var sessionStore = new MySQLStore(_db);
