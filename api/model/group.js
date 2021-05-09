@@ -309,7 +309,7 @@ deleteGroupMember: function (memberID, groupID, cb) {
                 sql = 'SELECT parfaitgroup.*, member.memberID, member.fname, member.lname, member.profilePicPath, groupmember.activeFlag, groupmember.adminFlag'
                 + ' FROM `parfaitgroup` INNER JOIN `groupmember` ON groupmember.groupID = parfaitgroup.groupID '
                 + ' INNER JOIN `member` ON member.memberID = groupmember.memberID '
-                + ' WHERE parfaitgroup.groupID = ?';
+                + ' WHERE parfaitgroup.groupID = ? AND member.activeFlag = 1';
 
                 pool.query(sql, groupID, (error, results) => {
                     if (error){

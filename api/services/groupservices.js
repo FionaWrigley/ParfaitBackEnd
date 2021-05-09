@@ -153,11 +153,6 @@ getGroupSchedules: function (gID, minDateStr, numberOfDays, userID, cb){
 ///////////////////////////////////////////////////////////////////////////////
 getGroupSchedules2: function (gID, minDateStr, numberOfDays, userID, cb){
 
-    console.log('groupservices')
-    console.log('gid ', gID)
-    console.log('mindateStr ', minDateStr)
-    console.log('numberofdays ', numberOfDays)
-    console.log('userID ', userID)
 
     let minDate = new Date(minDateStr);
 
@@ -165,7 +160,6 @@ getGroupSchedules2: function (gID, minDateStr, numberOfDays, userID, cb){
 
     let maxDate = datefns.add(minDate, {days: numberOfDays});
     let maxDateStr = datefns.format(maxDate, 'yyyy-MM-dd');
-
 
     group.getGroupDetails(gID, userID, (result) => {
 
@@ -182,11 +176,6 @@ getGroupSchedules2: function (gID, minDateStr, numberOfDays, userID, cb){
 
                         userList.push(result[i].memberID);
                         groupSched.members.push(newMember);
-
-                        console.log('newMember ',newMember)
-                        console.log('groupSched ', groupSched)
-                        console.log('groupSchedMembers ', groupSched.members)
-                        
                         
                         let mIndex = groupSched.members.length-1;
 
@@ -232,14 +221,6 @@ getGroupSchedules2: function (gID, minDateStr, numberOfDays, userID, cb){
 
                                     }else if(datefns.isEqual(d, startDate) && datefns.isBefore(d, endDate)){
 
-                                        console.log('memberIndex ', memberIndex);
-                                        console.log('dateIndex ', dateIndex);
-                                        console.log('check 1 ', groupSched);
-                                        console.log('check 2 ', groupSched.members);
-                                        console.log('check 3 ', groupSched.members[memberIndex]);
-                                        console.log('check 4 ', groupSched.members[memberIndex].events);
-                                        console.log('check 5 ', groupSched.members[memberIndex].events[dateIndex]);
-
                                         let newEvent = {eventID: results[i].eventID, eventName: results[i].eventName, eventDescription: results[i].eventDescription, eventDate: results[i].startDate, startTime: results[i].startTime, endTime: '23:59:00'}
                                         groupSched.members[memberIndex].events[dateIndex].push(newEvent);
                                         //groupSched.members[memberIndex].events.push(newEvent);
@@ -261,9 +242,6 @@ getGroupSchedules2: function (gID, minDateStr, numberOfDays, userID, cb){
                                 }
                             }
                         cb(groupSched);
-                    // }else{
-                    //     cb(groupSched);
-                    // }
                 })
             }else{
                 cb(groupSched);

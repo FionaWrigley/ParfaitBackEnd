@@ -8,7 +8,7 @@ const {
 
 module.exports = {
     getMemberIDPassword: function (email, cb) {
-        let sql = 'SELECT `memberID`, `password`, `userType` FROM `member` where email = ?'
+        let sql = 'SELECT `memberID`, `password`, `userType`, `activeFlag` FROM `member` where email = ?'
 
         pool.query(sql, email, function (err, results, fields) {
             if (err) {
@@ -103,7 +103,7 @@ module.exports = {
     //get member details for a specific member ID
     getMember: function (id, cb) {
 
-        let sql = 'SELECT * FROM `member` where memberID = ?';
+        let sql = 'SELECT `memberID`, `fname`, `lname`, `email`, `phone`, `userType`, `profilePicPath`, `activeFlag` FROM `member` where memberID = ?';
 
         pool.query(sql, id, function (err, results, fields) {
             if (err) {
@@ -123,9 +123,10 @@ module.exports = {
     //search member on phone/first name/surname/or email
     searchMembers: function (str, userID, cb) {
 
-        var sql = 'SELECT * FROM `member` WHERE ((`fname` LIKE ?) OR (`lname` LIKE ?) O' +
-            'R (`email` LIKE ?) OR (`phone` LIKE ?)) AND memberID NOT IN (?)';
+        var sql = 'SELECT `memberID`, `fname`, `lname`, `email`, `phone`, `userType`, `profilePicPath` FROM `member` WHERE ((`fname` LIKE ?) OR (`lname` LIKE ?) O' +
+            'R (`email` LIKE ?) OR (`phone` LIKE ?) OR (`memberID` LIKE ?)) AND memberID NOT IN (?) AND activeFlag = 1';
         let values = [
+            '%' + str + '%',
             '%' + str + '%',
             '%' + str + '%',
             '%' + str + '%',
@@ -181,5 +182,57 @@ module.exports = {
             }
             cb(result);
         });
+    },
+
+    updateUserType: function (id, userType){
+        
+        let sql = 'UPDATE `member` SET `userType` = ? WHERE memberID = ?';
+
+        let values = [
+            userType,
+            id
+        ];
+
+        pool.query(sql, values, function (err, result) {
+            if (err) {
+
+                logger.log({
+                    level: 'error',
+                    message: `Failed to udpate member, updateUserType, sql: ${sql}, values: ${values} error: ${err}`
+                });
+                throw err;
+            }
+            cb(result);
+        });
+    },
+
+    updateActiveFlag: function (id, activeFlag){
+        
+        let sql = 'UPDATE `member` SET `activeFlag` = ? WHERE memberID = ?';
+
+        let values = [
+            activeFlag,
+            id
+        ];
+
+        pool.query(sql, values, function (err, result) {
+            if (err) {
+
+                logger.log({
+                    level: 'error',
+                    message: `Failed to udpate member, updateActiveFlag, sql: ${sql}, values: ${values} error: ${err}`
+                });
+                throw err;
+            }
+            cb(result);
+        });
+    },
+    
+    deleteMember: function (id) {
+
+
+
     }
+
+
 }

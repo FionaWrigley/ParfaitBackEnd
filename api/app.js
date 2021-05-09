@@ -14,7 +14,6 @@ const groupService = require('./services/groupservices');
 const member = require('./model/member');
 const event = require('./model/event');
 const path = require('path');
-//var decode = require('unescape');
 const rateLimit = require("express-rate-limit");
 const {logger} = require('./services/logger');
 const multer = require('multer');
@@ -63,12 +62,17 @@ const dailyLimit = rateLimit({
 
 const app = express();
 
-app.use(cors({
-    origin: process.env.ORIGIN, 
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
-    allowedHeaders: ["Origin", "Content-Type", "Authorization", "x-requested-with"]
-}));
+var whitelist = ['10.0.0.40', '::1', '172.20.208.1'];
+
+
+var parfaitOptions = {
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+  allowedHeaders: ["Origin", "Content-Type", "Authorization", "x-requested-with"],
+  origin: [process.env.ORIGIN, process.env.ADMIN_ORIGIN]
+}
+
+app.use(cors(parfaitOptions));
 
 var sessionStore = new MySQLStore(_db);
 app.enable('trust proxy', true);
@@ -81,21 +85,18 @@ app.use(session({
     store: sessionStore,
     cookie: {
         httpOnly: false,
-        //secure: false,
-        secure: true,
-        sameSite:'none',
+        secure: false,
+        //secure: true,
+        //sameSite:'none',
         maxAge: 60000 * 60 * 48,
-        //domain: 'parfait-coral.vercel.app'
     }
 }))
-
 
 //app.use(cookieParser());
 app.use(bodyParser.json({limit: '50mb'})); // support json encoded bodies
 app.use(bodyParser.urlencoded({parameterLimit: 100000, extended: true, limit: '50mb'}));
 app.use(bodyParser.raw({limit: '50mb'}));
 app.use(express.static('public'));
-
 
 // RATE LIMITING prevents test scripts hence is currently commmented out
  //app.use(secondLimit, dailyLimit); //returns error code 429 when either rate
@@ -123,13 +124,6 @@ app.get('/loggedin', (req, res) => {
 // //////////////////////////////////////////////////////////////////////////////
 app.post('/login', loginValidationRules(), (req, res) => {
 
-    // if session already exists, destroy existing session, and attempt auth with
-    // new login details
-    if (req.session.userID) { //if session already exists
-        delete req.session.userID; //remove existing user id and proceed with authentication
-        delete req.session.userType;
-    }
-
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     //if fields are empty
@@ -145,17 +139,38 @@ app.post('/login', loginValidationRules(), (req, res) => {
     //otherwise check login is a valid email / password combo
     memberService.login(req.body.email, req.body.password, (result) => {
 
-        if (result.memberID) { //member ID was returned - authentication successful
-            req.session.userID = result.memberID;
-            req.session.userType = result.userType;
+        //member ID was returned - authentication match
+        if (result.memberID){ 
+            
+            if(req.headers.origin === process.env.ORIGIN) { //origin is parfait app - create session
 
-            logger.log({level: 'info', message: `Successful login, 204- IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, Email: ${req.body.email}`});
-            res.sendStatus(204); //return success - no content
-        } else if (result === 401) { //authentication failure
+                req.session.userID = result.memberID;
+                req.session.userType = result.userType; 
+
+                logger.log({level: 'info', message: `Successful login, 204- IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, Email: ${req.body.email}`});
+                res.sendStatus(204); //return success - no content
+            
+            }else if(req.headers.origin === process.env.ADMIN_ORIGIN){ //admin panel
+                
+                //user is an admin and is logging in from an allowed ip address
+                if(result.userType === 'Admin' && whitelist.indexOf(ip) !== -1){
+
+                    req.session.userID = result.memberID;
+                    req.session.userType = result.userType; 
+    
+                    logger.log({level: 'info', message: `Successful admin panel login, 204- IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, Email: ${req.body.email}`});
+                    res.sendStatus(204); //return success - no content
+
+                }else{ //Forbidden - invalid ip address or userType
+                    
+                    logger.log({level: 'Error', message: `Login attempt, 403 - Invalid IP address or userType, IP: ${ip} Email: ${req.body.email} userID: ${result.memberID}  userType: ${result.userType}`});
+                    res.sendStatus(403); 
+                }
+            }     
+        }else if (result === 401) { //authentication failure
             logger.log({level: 'warn', message: `Failed login attempt, 401 - IP: ${ip} Email: ${req.body.email}`});
             res.sendStatus('401'); //not authorized
         } else {
-
             logger.log({level: 'Error', message: `Login attempt, 500 - ERR: ${result}, IP: ${ip} Email: ${req.body.email}`});
             res.send(500); //an error has occured in execution
         }
@@ -184,7 +199,7 @@ app.get('/logout', (req, res) => {
                     .status(204)
                     .json('Session destroyed successfully');
             }
-        })
+    })
 });
 
 // /////////////////////////////////////////////////////////////////////////////
@@ -257,10 +272,11 @@ app.get('/users/:searchVal', sanitizeSearchVal(), (req, res) => {
 
 // /////////////////////////////////////////////////////////////////////////////
 // / /// return member profile information for logged in user
-// //////////////////////////////////////////////////////////////////////////////
+// /////////////////`/////////////////////////////////////////////////////////////
 app.get('/profile', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
 
     if (req.session.userID) { //authorized
         member.getMember(req.session.userID, (result) => {
@@ -308,7 +324,6 @@ app.post('/profile', profileValidationRules(), (req, res) => {
         logger.log({level: 'warn', message: `Unathorized access attempt - get profile - IP: ${ip}`});
         res.sendStatus(401);
     }
-
 });
 
 // /////////////////////////////////////////////////////////////////////////////
@@ -585,5 +600,12 @@ app.get('/grouppics/:groupID', (req, res) => {
 // ///////////////////////////////TODO//////////////////////////////////////////
 // / ////////////// edit event, edit group, delete group
 // delete group member, change password
+
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////ADMIN FUNCTIONS//////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+
+
 
 module.exports = app;
