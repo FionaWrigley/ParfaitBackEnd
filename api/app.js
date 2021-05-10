@@ -39,9 +39,9 @@ const storage = multer.diskStorage({
         const fileTypes = /jpeg|jpg|png|gif|tiff|webp|psd/;
         const extName = fileTypes.test(path.extname(file.originalname).toLowerCase());
         const mimeType = fileTypes.test(file.mimetype);
-        if(extName){
+        if (extName) {
             cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname).toLowerCase());
-        }else{
+        } else {
             cb(null, 'ERROR');
         }
     }
@@ -64,12 +64,21 @@ const app = express();
 
 var whitelist = ['10.0.0.40', '::1', '172.20.208.1'];
 
-
 var parfaitOptions = {
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
-  allowedHeaders: ["Origin", "Content-Type", "Authorization", "x-requested-with"],
-  origin: [process.env.ORIGIN, process.env.ADMIN_ORIGIN]
+    credentials: true,
+    methods: [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "HEAD",
+        "OPTIONS"
+    ],
+    allowedHeaders: [
+        "Origin", "Content-Type", "Authorization", "x-requested-with"
+    ],
+    origin: [process.env.ORIGIN, process.env.ADMIN_ORIGIN]
 }
 
 app.use(cors(parfaitOptions));
@@ -86,9 +95,8 @@ app.use(session({
     cookie: {
         httpOnly: false,
         secure: false,
-        //secure: true,
-        //sameSite:'none',
-        maxAge: 60000 * 60 * 48,
+        //secure: true, sameSite:'none',
+        maxAge: 60000 * 60 * 48
     }
 }))
 
@@ -99,22 +107,20 @@ app.use(bodyParser.raw({limit: '50mb'}));
 app.use(express.static('public'));
 
 // RATE LIMITING prevents test scripts hence is currently commmented out
- //app.use(secondLimit, dailyLimit); //returns error code 429 when either rate
+// app.use(secondLimit, dailyLimit); //returns error code 429 when either rate
 // limit reached
 // /////////////////////////////////////////////////////////////////////////////
 // /
 // //////////////////////////Routes/////////////////////////////////////////////
 // /
 // /////////////////////////////////////////////////////////////////////////////
-app.get('/', (req, res) => 
-    res.send("Everybody love Parfait")
-)
+app.get('/', (req, res) => res.send("Everybody love Parfait"))
 
 app.get('/loggedin', (req, res) => {
 
     if (req.session.userID) { //if session already exists
         res.sendStatus(204); //return success - no content
-    }else{
+    } else {
         res.sendStatus(401); //return not authorized
     }
 })
@@ -140,42 +146,44 @@ app.post('/login', loginValidationRules(), (req, res) => {
     memberService.login(req.body.email, req.body.password, (result) => {
 
         //member ID was returned - authentication match
-        if (result.memberID){ 
-            
-            if(req.headers.origin === process.env.ORIGIN) { //origin is parfait app - create session
+        if (result.memberID) {
+            if (req.headers.origin === process.env.ORIGIN) { //origin is parfait app - create session
 
                 req.session.userID = result.memberID;
-                req.session.userType = result.userType; 
+                req.session.userType = result.userType;
 
                 logger.log({level: 'info', message: `Successful login, 204- IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, Email: ${req.body.email}`});
                 res.sendStatus(204); //return success - no content
-            
-            }else if(req.headers.origin === process.env.ADMIN_ORIGIN){ //admin panel
-                
+
+            } else if (req.headers.origin === process.env.ADMIN_ORIGIN) { //admin panel
+
                 //user is an admin and is logging in from an allowed ip address
-                if(result.userType === 'Admin' && whitelist.indexOf(ip) !== -1){
+                if (result.userType === 'Admin' && whitelist.indexOf(ip) !== -1) {
 
                     req.session.userID = result.memberID;
-                    req.session.userType = result.userType; 
-    
+                    req.session.userType = result.userType;
+
                     logger.log({level: 'info', message: `Successful admin panel login, 204- IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, Email: ${req.body.email}`});
                     res.sendStatus(204); //return success - no content
 
-                }else{ //Forbidden - invalid ip address or userType
-                    
+                } else { //Forbidden - invalid ip address or userType
+
                     logger.log({level: 'Error', message: `Login attempt, 403 - Invalid IP address or userType, IP: ${ip} Email: ${req.body.email} userID: ${result.memberID}  userType: ${result.userType}`});
-                    res.sendStatus(403); 
+                    res.sendStatus(403);
                 }
-            }     
-        }else if (result === 401) { //authentication failure
+            }
+        } else if (result === 401) { //authentication failure
             logger.log({level: 'warn', message: `Failed login attempt, 401 - IP: ${ip} Email: ${req.body.email}`});
-            res.sendStatus('401'); //not authorized
+            res.sendStatus(401); //not authorized
+        } else if (result === 403) { //inactive user
+            res.sendStatus(403);
         } else {
             logger.log({level: 'Error', message: `Login attempt, 500 - ERR: ${result}, IP: ${ip} Email: ${req.body.email}`});
             res.send(500); //an error has occured in execution
         }
     });
 });
+
 // /////////////////////////////////////////////////////////////////////////////
 // / ////////////// logout and destroy session
 // //////////////////////////////////////////////////////////////////////////////
@@ -199,7 +207,7 @@ app.get('/logout', (req, res) => {
                     .status(204)
                     .json('Session destroyed successfully');
             }
-    })
+        })
 });
 
 // /////////////////////////////////////////////////////////////////////////////
@@ -255,7 +263,6 @@ app.post('/creategroup', createGroupSanitize(), (req, res) => {
 // /////////////////////////////////////////////////////////////////////////////
 // / ////// get user list for given search value
 // //////////////////////////////////////////////////////////////////////////////
-
 app.get('/users/:searchVal', sanitizeSearchVal(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
@@ -272,11 +279,11 @@ app.get('/users/:searchVal', sanitizeSearchVal(), (req, res) => {
 
 // /////////////////////////////////////////////////////////////////////////////
 // / /// return member profile information for logged in user
-// /////////////////`/////////////////////////////////////////////////////////////
+// /////////////////`////////////////////////////////////////////////////////////
+// /
 app.get('/profile', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-
 
     if (req.session.userID) { //authorized
         member.getMember(req.session.userID, (result) => {
@@ -307,7 +314,7 @@ app.post('/profile', profileValidationRules(), (req, res) => {
             });
     }
 
-    if (req.session.userID){ //authorized
+    if (req.session.userID) { //authorized
         //posted fields are valid, check if email is already in use
         member.memberExists(req.body.email, (result) => {
             if (result.memberID === 0 || result.memberID === req.session.userID) { //email not in use or in use by current user
@@ -336,9 +343,9 @@ app.get('/profilepic', (req, res) => {
     if (req.session.userID) { //authorized
         memberService.getProfilePic(req.session.userID, (result) => {
             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-            
-            res.sendFile(__dirname + '\\public\\' + result[0].profilePicPath); 
-        })      
+
+            res.sendFile(__dirname + '\\public\\' + result[0].profilePicPath);
+        })
     } else { //not authorized
         logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
         res.sendStatus(401);
@@ -355,8 +362,8 @@ app.get('/profilepic2', (req, res) => {
     if (req.session.userID) { //authorized
         memberService.getProfilePic(req.session.userID, (result) => {
             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-            res.send(result[0]); 
-        })      
+            res.send(result[0]);
+        })
     } else { //not authorized
         logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
         res.sendStatus(401);
@@ -377,51 +384,52 @@ app.post('/profilepic', (req, res, next) => {
         res.sendStatus(401); //not authorized
     }
 }, upload.single('profilepic'), //get file (Multer function)
-       async function (req, res, next) {
+        async function (req, res, next) {
 
-            const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
-            if(req.file.path == 'public\\temp\\ERROR'){
-                logger.log({level: 'info', message: `Update profile pic - Invalid file type ${req.file.path} IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-                res.sendStatus(422); //Invalid file type
-            }else{
+    if (req.file.path == 'public\\temp\\ERROR') {
+        logger.log({level: 'info', message: `Update profile pic - Invalid file type ${req.file.path} IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+        res.sendStatus(422); //Invalid file type
+    } else {
 
-                //resize image to 100px x 100px
-                await sharp(__dirname +"\\"+ req.file.path)
-                .resize(100, 100, {
-                  fit: sharp.fit.cover, //maintain image aspect, crop to fit size
-                  position: sharp.strategy.entropy, //indentify light and skin tones to centre image
-                 })
-                 .withMetadata() //retains exif data, required for image orientation
-                 .toFile(__dirname + "\\public\\images\\100px"+ req.file.filename)
-                .catch(err =>  logger.log({level: 'err', message: `Update profile pic - ERROR: ${err} IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`}));
+        //resize image to 100px x 100px
+        await sharp(__dirname + "\\" + req.file.path)
+            .resize(100, 100, {
+            fit: sharp.fit.cover, //maintain image aspect, crop to fit size
+            position: sharp.strategy.entropy, //indentify light and skin tones to centre image
+        })
+            .withMetadata() //retains exif data, required for image orientation
+            .toFile(__dirname + "\\public\\images\\100px" + req.file.filename)
+            .catch(err => logger.log({level: 'err', message: `Update profile pic - ERROR: ${err} IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`}));
 
-                //remove temporary large image
-                fs.unlink(__dirname +"\\"+ req.file.path, (err) => {
+        //remove temporary large image
+        fs.unlink(__dirname + "\\" + req.file.path, (err) => {
+            if (err) {
+                console.error(err)
+                return;
+            }
+        })
+
+        //get path for previous image
+        memberService.getProfilePic(req.session.userID, (result) => {
+
+            if (result[0].profilePicPath != '') { //previous image exists
+                let fullpath = "public\\" + result[0].profilePicPath;
+                fs.unlink(fullpath, (err) => { //delete previous image
                     if (err) {
-                      console.error(err)
-                      return;
+                        console.error(err)
+                        return;
                     }
                 })
-
-                //get path for previous image
-                memberService.getProfilePic(req.session.userID, (result) => {
-
-                    if(result[0].profilePicPath != ''){ //previous image exists
-                    let fullpath = "public\\" + result[0].profilePicPath; 
-                    fs.unlink(fullpath, (err) => { //delete previous image
-                        if (err) {
-                          console.error(err)
-                          return;
-                        }
-                    })}
-                }) 
-                //add new image path
-                let newpath = "images\\100px"+ req.file.filename; //trim the public folder off path
-                memberService.updatePic(req.session.userID, newpath, (result) => {
-                    logger.log({level: 'info', message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-                    res.sendStatus(204); //success       
-        })  
+            }
+        })
+        //add new image path
+        let newpath = "images\\100px" + req.file.filename; //trim the public folder off path
+        memberService.updatePic(req.session.userID, newpath, (result) => {
+            logger.log({level: 'info', message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+            res.sendStatus(204); //success
+        })
     }
 })
 // /////////////////////////////////////////////////////////////////////////////
@@ -520,9 +528,10 @@ app.post('/register', registerValidationRules(), (req, res) => {
 
         } else { //email not already in use, proceed with create member
 
-                          let user = {...req.body, 
-                                        userType: "Member"}
-                        
+            let user = {
+                ...req.body,
+                userType: "Member"
+            }
 
             member.createMember(user, (userID) => {
                 if (userID > 0) {
@@ -550,26 +559,27 @@ app.post('/createevent', (req, res) => {
 
     if (req.session.userID) { //authorized
 
-         event.createEvent(eventObj, req.session.userID, (result) => {
-             logger.log({level: 'info', message: `Create event - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, groupID:  ${result.eventID}`});
-             res.sendStatus(204);
-         })
-     } else { //unathorized
-         logger.log({level: 'warn', message: `Unathorized create event, 401 IP: ${ip}`});
-         res.sendStatus(401); //unathorized
-     }
+        event.createEvent(eventObj, req.session.userID, (result) => {
+            logger.log({level: 'info', message: `Create event - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, groupID:  ${result.eventID}`});
+            res.sendStatus(204);
+        })
+    } else { //unathorized
+        logger.log({level: 'warn', message: `Unathorized create event, 401 IP: ${ip}`});
+        res.sendStatus(401); //unathorized
+    }
 });
 
-/////////////////////////////////////////////////////////////////////////////////////
-//Delete event
-///////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// ///// Delete event
+// //////////////////////////////////////////////////////////////////////////////
+// ///
 app.post('/deleteevent', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     if (req.session.userID) { //authorised
         event.deleteEvent(req.body.eventID, req.session.userID, (result) => {
-            
+
             logger.log({level: 'info', message: `Delete event - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, group: ${req.body.eventID}`});
             res.sendStatus(204);
         })
@@ -579,9 +589,9 @@ app.post('/deleteevent', (req, res) => {
     }
 })
 
-/////////////////////////////////////////////////////////////////////
-/////getGroupPics
-///////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////
+// ///getGroupPics
+// /////////////////////////////////////////////////////////////////
 app.get('/grouppics/:groupID', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
@@ -598,13 +608,104 @@ app.get('/grouppics/:groupID', (req, res) => {
 });
 
 // ///////////////////////////////TODO//////////////////////////////////////////
-// / ////////////// edit event, edit group, delete group
-// delete group member, change password
+// / ////////////// edit event, edit group, delete group delete group member,
+// change password
+// //////////////////////////////////////////////////////////////////////////////
+// //// //////////////////ADMIN
+// FUNCTIONS//////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////
+// ////
+// //////////////////////////////////////////////////////////////////////////////
+// /
 
-////////////////////////////////////////////////////////////////////////////////////
-////////////////////ADMIN FUNCTIONS//////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////////////
+// / ////// get user list for given search value
+// //////////////////////////////////////////////////////////////////////////////
+app.get('/userlist/:searchVal', (req, res) => {
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+    if (req.session.userID) { //has a session
+
+        if (req.headers.origin === process.env.ORIGIN || (req.headers.origin === process.env.ADMIN_ORIGIN && req.session.userType === 'Admin' && whitelist.indexOf(ip) !== -1)) {
+
+            member.getMembers(req.params.searchVal, req.session.userID, (result) => {
+                logger.log({level: 'info', message: `Search members - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`});
+                console.log(result);
+                
+                res.json(result);
+            })
+        } else {
+            res.sendStatus(403);
+        }
+    } else { //not authorized
+        logger.log({level: 'warn', message: `Unathorized access attempt - search users - IP: ${ip}`});
+        res.sendStatus(401);
+    }
+});
+
+// /////////////////////////////////////////////////////////////////////////////
+// / ////// update active flag
+// //////////////////////////////////////////////////////////////////////////////
+app.get('/activeFlag/:memberID/:activeFlag', (req, res) => {
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+    if (req.session.userID) { //has a session
+
+        console.log('req.params.activeFlag ', req.params.activeFlag);
+        //is a valid admin
+        if (req.headers.origin === process.env.ADMIN_ORIGIN && req.session.userType === 'Admin' && whitelist.indexOf(ip) !== -1) {
+
+            //valid activeFlag value
+            if(req.params.activeFlag === '0' || req.params.activeFlag === '1'){
+            member.updateActiveFlag(req.params.memberID, req.params.activeFlag, (result) => {
+                logger.log({level: 'info', message: `Search members - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`});
+                console.log(result);
+                res.sendStatus(204);
+            })
+        }else{
+            res.sendStatus(422);
+        }
+        } else {
+            res.sendStatus(403);
+        }
+    } else { //not authorized
+        logger.log({level: 'warn', message: `Unathorized access attempt - search users - IP: ${ip}`});
+        res.sendStatus(401);
+    }
+});
+
+// /////////////////////////////////////////////////////////////////////////////
+// / ////// update user type
+// //////////////////////////////////////////////////////////////////////////////
+app.get('/userType/:memberID/:userType', (req, res) => {
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+    if (req.session.userID) { //has a session
+
+        //is a valid admin
+        if (req.headers.origin === process.env.ADMIN_ORIGIN && req.session.userType === 'Admin' && whitelist.indexOf(ip) !== -1) {
+
+            //valid activeFlag value
+            if(req.params.userType === 'Admin' || req.params.userType === 'Member'){
+            member.updateUserType(req.params.memberID, req.params.userType, (result) => {
+                logger.log({level: 'info', message: `Search members - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`});
+                res.sendStatus(204);
+            })
+        }else{
+            res.sendStatus(422);
+        }
+        } else {
+            res.sendStatus(403);
+        }
+    } else { //not authorized
+        logger.log({level: 'warn', message: `Unathorized access attempt - search users - IP: ${ip}`});
+        res.sendStatus(401);
+    }
+});
+
 
 
 

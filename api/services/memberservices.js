@@ -7,23 +7,25 @@ var crypto = require('crypto');
 var validator = require('validator');
 
 module.exports = {
-
     login: function (email, password, cb) {
-
         member
             .getMemberIDPassword(email, (results) => {
 
                 if (results.length > 0) {
 
-                    let hash = crypto
-                        .createHash('sha1')
-                        .update(password)
-                        .digest('base64');
+                    if(results[0].activeFlag){
+                        let hash = crypto
+                            .createHash('sha1')
+                            .update(password)
+                            .digest('base64');
 
-                    if (results[0].password == hash) {
-                        return cb(results[0]);
-                    } else {
-                        return cb(401);
+                        if (results[0].password == hash) {
+                            return cb(results[0]);
+                        } else {
+                            return cb(401);
+                        }
+                    }else { 
+                        return cb(403);
                     }
                 } else {
                     return cb(401);

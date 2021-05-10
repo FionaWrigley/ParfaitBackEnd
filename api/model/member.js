@@ -184,7 +184,7 @@ module.exports = {
         });
     },
 
-    updateUserType: function (id, userType){
+    updateUserType: function (id, userType, cb){
         
         let sql = 'UPDATE `member` SET `userType` = ? WHERE memberID = ?';
 
@@ -206,7 +206,7 @@ module.exports = {
         });
     },
 
-    updateActiveFlag: function (id, activeFlag){
+    updateActiveFlag: function (id, activeFlag, cb){
         
         let sql = 'UPDATE `member` SET `activeFlag` = ? WHERE memberID = ?';
 
@@ -227,10 +227,47 @@ module.exports = {
             cb(result);
         });
     },
+
+    //search member on phone/first name/surname/or email
+    getMembers: function (str, userID, cb) {
+
+        let values;
+        if(str === '*'){
+
+            var sql = 'SELECT `memberID`, `fname`, `lname`, `email`, `userType`, `profilePicPath`, `activeFlag` FROM `member` WHERE memberID NOT IN (?)';
+            values = userID;
+
+        }else{
+        var sql = 'SELECT `memberID`, `fname`, `lname`, `email`, `userType`, `profilePicPath`, `activeFlag` FROM `member` WHERE ((`fname` LIKE ?) OR (`lname` LIKE ?) O' +
+            'R (`email` LIKE ?) OR (`phone` LIKE ?) OR (`memberID` LIKE ?)) AND memberID NOT IN (?)';
+        values = [
+            '%' + str + '%',
+            '%' + str + '%',
+            '%' + str + '%',
+            '%' + str + '%',
+            '%' + str + '%',
+            userID
+        ];
+    }
+        pool.query(sql, values, function (err, result) {
+            if (err) {
+                logger.log({
+                    level: 'error',
+                    message: `Failed to get select from member, searchMembers, sql: ${sql}, values: ${values} error: ${err}`
+                });
+                throw err;
+            }
+            cb(result);
+        });
+    },
     
     deleteMember: function (id) {
 
-
+        //delete member events
+        //delete member group entries
+            //if last group member / delete group
+        
+        //delete 
 
     }
 
