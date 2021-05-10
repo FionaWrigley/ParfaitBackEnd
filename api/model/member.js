@@ -238,7 +238,8 @@ module.exports = {
             values = userID;
 
         }else{
-        var sql = 'SELECT `memberID`, `fname`, `lname`, `email`, `userType`, `profilePicPath`, `activeFlag` FROM `member` WHERE ((`fname` LIKE ?) OR (`lname` LIKE ?) O' +
+        
+            var sql = 'SELECT `memberID`, `fname`, `lname`, `email`, `userType`, `profilePicPath`, `activeFlag` FROM `member` WHERE ((`fname` LIKE ?) OR (`lname` LIKE ?) O' +
             'R (`email` LIKE ?) OR (`phone` LIKE ?) OR (`memberID` LIKE ?)) AND memberID NOT IN (?)';
         values = [
             '%' + str + '%',
@@ -248,6 +249,7 @@ module.exports = {
             '%' + str + '%',
             userID
         ];
+        
     }
         pool.query(sql, values, function (err, result) {
             if (err) {
