@@ -62,7 +62,7 @@ const dailyLimit = rateLimit({
 
 const app = express();
 
-var whitelist = ['10.0.0.40', '::1', '172.20.208.1'];
+
 
 // var parfaitOptions = {
 //     credentials: true,
@@ -99,13 +99,15 @@ var whitelist = ['10.0.0.40', '::1', '172.20.208.1'];
 //     origin: process.env.ORIGIN
 // }));
 
-// app.use(cors({
-//     origin: 'https://parfait-coral.vercel.app',
-//     credentials: true,
-//     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
-//     allowedHeaders: ["Origin", "origin", "Content-Type", "Authorization", "x-requested-with"]
+app.use(cors({
+    origin: process.env.ORIGIN,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+    allowedHeaders: ["Origin", "origin", "Content-Type", "Authorization", "x-requested-with"],
+    preflightContinue: true
+}));
 
-// }));
+var whitelist = ['10.0.0.40', '::1', '172.20.208.1'];
 
 var sessionStore = new MySQLStore(_db);
 app.enable('trust proxy', true);
@@ -120,6 +122,7 @@ app.use(session({
         httpOnly: false,
         secure: true, 
         sameSite:'none',
+        secure: false,
         maxAge: 60000 * 60 * 48
     }
 }))
