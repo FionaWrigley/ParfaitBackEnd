@@ -107,6 +107,8 @@ app.use(cors({
     preflightContinue: true
 }));
 
+app.enable('*', cors());
+
 var whitelist = ['10.0.0.40', '::1', '172.20.208.1'];
 
 var sessionStore = new MySQLStore(_db);
