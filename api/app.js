@@ -78,7 +78,8 @@ var parfaitOptions = {
     allowedHeaders: [
         "Origin", "Content-Type", "Authorization", "x-requested-with"
     ],
-    origin: [process.env.ORIGIN, process.env.ADMIN_ORIGIN]
+    origin: [process.env.ORIGIN, process.env.ADMIN_ORIGIN],
+    preflightContinue: true
 }
 
 app.options('*', cors(parfaitOptions));
