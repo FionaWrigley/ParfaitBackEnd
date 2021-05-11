@@ -78,11 +78,10 @@ var parfaitOptions = {
     allowedHeaders: [
         "Origin", "Content-Type", "Authorization", "x-requested-with"
     ],
-    origin: [process.env.ORIGIN, process.env.ADMIN_ORIGIN],
-    preflightContinue: true
+    origin: [process.env.ORIGIN]
 }
 
-app.options('*', cors(parfaitOptions));
+//app.options([process.env.ORIGIN, process.env.ADMIN_ORIGIN], cors(parfaitOptions));
 app.use(cors(parfaitOptions));
 
 var sessionStore = new MySQLStore(_db);
