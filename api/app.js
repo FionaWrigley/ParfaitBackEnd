@@ -94,8 +94,9 @@ app.use(session({
     store: sessionStore,
     cookie: {
         httpOnly: false,
-        secure: false,
-        //secure: true, sameSite:'none',
+        //secure: false,
+        secure: true, 
+        sameSite:'none',
         maxAge: 60000 * 60 * 48
     }
 }))
@@ -147,6 +148,7 @@ app.post('/login', loginValidationRules(), (req, res) => {
 
         //member ID was returned - authentication match
         if (result.memberID) {
+
             if (req.headers.origin === process.env.ORIGIN) { //origin is parfait app - create session
 
                 req.session.userID = result.memberID;
@@ -706,7 +708,31 @@ app.get('/userType/:memberID/:userType', (req, res) => {
     }
 });
 
+////////////////////////////////////////////////////////////////////////////////////
+//////////////////////delete user////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 
+app.get('/deletemember/:memberID', (req, res) => {
 
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+    if (req.session.userID) { //has a session
+
+        if (req.headers.origin === process.env.ADMIN_ORIGIN && req.session.userType === 'Admin' && whitelist.indexOf(ip) !== -1) {
+
+            member.deleteMember(req.params.memberID, (result) => {
+                logger.log({level: 'info', message: `Delete member - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`});
+                console.log('delete member', result);
+                
+                res.sendStatus(204);
+            })
+        } else {
+            res.sendStatus(403);
+        }
+    } else { //not authorized
+        logger.log({level: 'warn', message: `Unathorized access attempt - search users - IP: ${ip}`});
+        res.sendStatus(401);
+    }
+});
 
 module.exports = app;
