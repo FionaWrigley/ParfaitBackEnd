@@ -81,6 +81,7 @@ var parfaitOptions = {
     origin: [process.env.ORIGIN, process.env.ADMIN_ORIGIN]
 }
 
+app.options('*', cors(parfaitOptions));
 app.use(cors(parfaitOptions));
 
 var sessionStore = new MySQLStore(_db);
@@ -94,7 +95,6 @@ app.use(session({
     store: sessionStore,
     cookie: {
         httpOnly: false,
-        //secure: false,
         secure: true, 
         sameSite:'none',
         maxAge: 60000 * 60 * 48
