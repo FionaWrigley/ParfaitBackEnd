@@ -99,12 +99,13 @@ var whitelist = ['10.0.0.40', '::1', '172.20.208.1'];
 //     origin: process.env.ORIGIN
 // }));
 
-app.use(cors({
-    origin: 'https://parfait-coral.vercel.app',
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
-    allowedHeaders: ["Origin", "origin", "Content-Type", "Authorization", "x-requested-with"]
-}));
+// app.use(cors({
+//     origin: 'https://parfait-coral.vercel.app',
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+//     allowedHeaders: ["Origin", "origin", "Content-Type", "Authorization", "x-requested-with"]
+
+// }));
 
 var sessionStore = new MySQLStore(_db);
 app.enable('trust proxy', true);
