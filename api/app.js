@@ -101,9 +101,10 @@ var whitelist = ['10.0.0.40', '::1', '172.20.208.1'];
 
 app.use(cors({
     origin: process.env.ORIGIN, 
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
-    allowedHeaders: ["Origin", "origin", "Content-Type", "Authorization", "x-requested-with"]
+    credentials: true
+    // ,
+    // methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+    // allowedHeaders: ["Origin", "origin", "Content-Type", "Authorization", "x-requested-with"]
 }));
 
 var sessionStore = new MySQLStore(_db);
