@@ -147,7 +147,7 @@ app.get('/loggedin', cors(parfaitOptions), (req, res) => {
 // /////////////////////////////////////////////////////////////////////////////
 // / //////////// login
 // //////////////////////////////////////////////////////////////////////////////
-app.post('/login', cors(parfaitOptions), loginValidationRules(), (req, res) => {
+app.post('/login',  loginValidationRules(), cors(parfaitOptions), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
@@ -253,7 +253,7 @@ app.get('/groups', cors(parfaitOptions), (req, res) => {
 // / ////////// create new group
 // //////////////////////////////////////////////////////////////////////////////
 
-app.post('/creategroup', cors(parfaitOptions), createGroupSanitize(), (req, res) => {
+app.post('/creategroup',  createGroupSanitize(), cors(parfaitOptions), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
@@ -283,7 +283,7 @@ app.post('/creategroup', cors(parfaitOptions), createGroupSanitize(), (req, res)
 // /////////////////////////////////////////////////////////////////////////////
 // / ////// get user list for given search value
 // //////////////////////////////////////////////////////////////////////////////
-app.get('/users/:searchVal', cors(parfaitOptions), sanitizeSearchVal(), (req, res) => {
+app.get('/users/:searchVal',  sanitizeSearchVal(), cors(parfaitOptions), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
     if (req.session.userID) { //authorized
@@ -319,7 +319,7 @@ app.get('/profile', cors(parfaitOptions), (req, res) => {
 // /////////////////////////////////////////////////////////////////////////
 // update member profile for logged in user
 // ////////////////////////////////////////////////////////////////////////////
-app.post('/profile', cors(parfaitOptions), profileValidationRules(), (req, res) => {
+app.post('/profile',  profileValidationRules(), cors(parfaitOptions), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
@@ -455,7 +455,7 @@ app.post('/profilepic', cors(parfaitOptions), (req, res, next) => {
 // /////////////////////////////////////////////////////////////////////////////
 // / //////////////// get schedule for a given date for logged in user
 // //////////////////////////////////////////////////////////////////////////////
-app.get('/scheduleday/:date', cors(parfaitOptions), scheduleDayValidationRules(), (req, res) => {
+app.get('/scheduleday/:date', scheduleDayValidationRules(), cors(parfaitOptions), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
@@ -490,7 +490,7 @@ app.get('/scheduleday/:date', cors(parfaitOptions), scheduleDayValidationRules()
 // /  get group schedules for selected group of logged in user for given
 // duration
 // /////////////////////////////////////////////////////////////////////////////
-app.get('/groupschedule/:groupID/:currDate/:numberOfDays', cors(parfaitOptions), groupSchedValidationRules(), (req, res) => {
+app.get('/groupschedule/:groupID/:currDate/:numberOfDays', groupSchedValidationRules(), cors(parfaitOptions),  (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
@@ -520,7 +520,7 @@ app.get('/groupschedule/:groupID/:currDate/:numberOfDays', cors(parfaitOptions),
 // / ////////// register new member
 // //////////////////////////////////////////////////////////////////////////////
 
-app.post('/register', cors(parfaitOptions), registerValidationRules(), (req, res) => {
+app.post('/register', registerValidationRules(), cors(parfaitOptions), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
     const errors = validationResult(req);
