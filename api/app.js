@@ -82,7 +82,22 @@ var parfaitOptions = {
 }
 
 //app.options([process.env.ORIGIN, process.env.ADMIN_ORIGIN], cors(parfaitOptions));
-app.use(cors(parfaitOptions));
+app.use(cors({
+    credentials: true,
+    methods: [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "HEAD",
+        "OPTIONS"
+    ],
+    allowedHeaders: [
+        "Origin", "Content-Type", "Authorization", "x-requested-with"
+    ],
+    origin: process.env.ORIGIN
+}));
 
 var sessionStore = new MySQLStore(_db);
 app.enable('trust proxy', true);
