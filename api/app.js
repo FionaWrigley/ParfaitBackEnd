@@ -62,8 +62,6 @@ const dailyLimit = rateLimit({
 
 const app = express();
 
-
-
 var parfaitOptions = {
     credentials: true,
     methods: [
@@ -101,8 +99,6 @@ var parfaitOptions = {
 
 app.use(cors(parfaitOptions));
 
-
-
 var whitelist = ['10.0.0.40', '::1', '172.20.208.1'];
 
 var sessionStore = new MySQLStore(_db);
@@ -137,9 +133,9 @@ app.use(express.static('public'));
 // //////////////////////////Routes/////////////////////////////////////////////
 // /
 // /////////////////////////////////////////////////////////////////////////////
-app.get('/', cors(parfaitOptions), (req, res) => res.send("Everybody love Parfait"))
+app.get('/', cors(parfaitOptions), (req, res) => res.send("Everybody love Parfait!"))
 
-app.get('/loggedin', (req, res) => {
+app.get('/loggedin', cors(parfaitOptions), (req, res) => {
 
     if (req.session.userID) { //if session already exists
         res.sendStatus(204); //return success - no content
