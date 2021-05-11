@@ -100,7 +100,7 @@ const app = express();
 // }));
 
 app.use(cors({
-    origin: process.env.ORIGIN,
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
     allowedHeaders: ["Origin", "origin", "Content-Type", "Authorization", "x-requested-with"],
