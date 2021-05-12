@@ -100,7 +100,7 @@ var parfaitOptions = {
 
 app.use(cors(parfaitOptions));
 
-var whitelist = ['10.0.0.40', '::1', '172.20.208.1'];
+var whitelist = ['10.0.0.40', '::1', '172.20.208.1', process.env.ADMIN_IP1];
 
 var sessionStore = new MySQLStore(_db);
 app.enable('trust proxy', true);
