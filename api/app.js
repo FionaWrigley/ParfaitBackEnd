@@ -74,12 +74,12 @@ var parfaitOptions = {
         "OPTIONS"
     ],
     allowedHeaders: [
-        "Origin", "Content-Type", "Authorization", "x-requested-with", "Access-Control-Allow-Origin"
+        "Origin", "Content-Type", "Authorization", "x-requested-with"
     ],
-    origin: process.env.ORIGIN,
+    origin: [process.env.ORIGIN, process.env.ADMIN_ORIGIN],
 }
 
-//this sux
+//cors is a pain
 //app.options([process.env.ORIGIN, process.env.ADMIN_ORIGIN], cors(parfaitOptions));
 // app.use(cors({
 //     credentials: true,
@@ -116,7 +116,6 @@ app.use(session({
         //secure: false,
         secure: true, 
         sameSite:'none',
-        secure: false,
         maxAge: 60000 * 60 * 48
     }
 }))
