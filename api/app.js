@@ -79,6 +79,7 @@ var parfaitOptions = {
     origin: process.env.ORIGIN,
 }
 
+//this sux
 //app.options([process.env.ORIGIN, process.env.ADMIN_ORIGIN], cors(parfaitOptions));
 // app.use(cors({
 //     credentials: true,
