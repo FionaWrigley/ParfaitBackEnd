@@ -268,10 +268,7 @@ module.exports = {
                                 });
 
                             }
-                            console.log('orphan query result, ', results);
                             orphanGroups = results;
-                            console.log('orphan groups ', orphanGroups);
-
                             
                             //remove user from all groups
                             sql = 'delete from `groupmember` where `memberID` = ?';

@@ -20,6 +20,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 const fs = require('fs');
 const {unescape, validationResult} = require('express-validator');
+var cloudinary = require('cloudinary').v2
 const {default: validator} = require('validator');
 const {
     loginValidationRules,
@@ -31,6 +32,17 @@ const {
     sanitizeSearchVal
 } = require('./services/validator.js');
 const {de} = require('date-fns/locale');
+var uploads = {};
+
+function waitForAllUploads(id, err, image) {
+    uploads[id] = image;
+    var ids = Object.keys(uploads);
+    if (ids.length === 6) {
+        console.log();
+        console.log('**  uploaded all files (' + ids.join(',') + ') to cloudinary');
+        //performTransformations();
+    }
+}
 
 //set up file storage options
 const storage = multer.diskStorage({
@@ -76,27 +88,8 @@ var parfaitOptions = {
     allowedHeaders: [
         "Origin", "Content-Type", "Authorization", "x-requested-with"
     ],
-    origin: [process.env.ORIGIN, process.env.ADMIN_ORIGIN],
+    origin: [process.env.ORIGIN, process.env.ADMIN_ORIGIN]
 }
-
-//cors is a pain
-//app.options([process.env.ORIGIN, process.env.ADMIN_ORIGIN], cors(parfaitOptions));
-// app.use(cors({
-//     credentials: true,
-//     methods: [
-//         "GET",
-//         "POST",
-//         "PUT",
-//         "PATCH",
-//         "DELETE",
-//         "HEAD",
-//         "OPTIONS"
-//     ],
-//     allowedHeaders: [
-//         "Origin", "Content-Type", "Authorization", "x-requested-with"
-//     ],
-//     origin: process.env.ORIGIN
-// }));
 
 app.use(cors(parfaitOptions));
 
@@ -113,9 +106,8 @@ app.use(session({
     store: sessionStore,
     cookie: {
         httpOnly: false,
-        //secure: false,
-        secure: true, 
-        sameSite:'none',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 60000 * 60 * 48
     }
 }))
@@ -148,13 +140,12 @@ app.get('/loggedin', (req, res) => {
 // /////////////////////////////////////////////////////////////////////////////
 // / //////////// login
 // //////////////////////////////////////////////////////////////////////////////
-app.post('/login',  loginValidationRules(), (req, res) => {
+app.post('/login', loginValidationRules(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     //if fields are empty
     const errors = validationResult(req);
-    console.log(errors);
     if (!errors.isEmpty()) {
 
         logger.log({level: 'warn', message: `Failed login attempt, 422 Invalid user name or password - IP: ${ip} Email: ${req.body.email}`});
@@ -255,14 +246,12 @@ app.get('/groups', (req, res) => {
 // / ////////// create new group
 // //////////////////////////////////////////////////////////////////////////////
 
-app.post('/creategroup',  createGroupSanitize(), (req, res) => {
+app.post('/creategroup', createGroupSanitize(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     //input fields are invalid
     const errors = validationResult(req);
-    console.log(errors);
-    console.log(req.body)
 
     if (!errors.isEmpty()) {
         logger.log({level: 'warn', message: `Failed group creation, 422 Invalid input ${errors} - IP: ${ip}`});
@@ -288,7 +277,7 @@ app.post('/creategroup',  createGroupSanitize(), (req, res) => {
 // /////////////////////////////////////////////////////////////////////////////
 // / ////// get user list for given search value
 // //////////////////////////////////////////////////////////////////////////////
-app.get('/users/:searchVal',  sanitizeSearchVal(), (req, res) => {
+app.get('/users/:searchVal', sanitizeSearchVal(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
     if (req.session.userID) { //authorized
@@ -304,8 +293,8 @@ app.get('/users/:searchVal',  sanitizeSearchVal(), (req, res) => {
 
 // /////////////////////////////////////////////////////////////////////////////
 // / /// return member profile information for logged in user
-// /////////////////`////////////////////////////////////////////////////////////
-// /
+// /////////////////`///////////////////////////////////////////////////////////
+// / /
 app.get('/profile', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
@@ -324,7 +313,7 @@ app.get('/profile', (req, res) => {
 // /////////////////////////////////////////////////////////////////////////
 // update member profile for logged in user
 // ////////////////////////////////////////////////////////////////////////////
-app.post('/profile',  profileValidationRules(), (req, res) => {
+app.post('/profile', profileValidationRules(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
@@ -361,33 +350,50 @@ app.post('/profile',  profileValidationRules(), (req, res) => {
 // /////////////////////////////////////////////////////////////////////////////
 // / //////////////// get profile picture for authorized user
 // //////////////////////////////////////////////////////////////////////////////
-app.get('/profilepic', (req, res) => {
+// app.get('/profilepic', (req, res) => {
 
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+//     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
-    if (req.session.userID) { //authorized
-        memberService.getProfilePic(req.session.userID, (result) => {
-            logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+//     if (req.session.userID) { //authorized
+//         memberService.getProfilePic(req.session.userID, (result) => {
+//             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
 
-            res.sendFile(__dirname + '\\public\\' + result[0].profilePicPath);
-        })
-    } else { //not authorized
-        logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
-        res.sendStatus(401);
-    }
-});
+//             res.sendFile(__dirname + '\\public\\' + result[0].profilePicPath);
+//         })
+//     } else { //not authorized
+//         logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
+//         res.sendStatus(401);
+//     }
+// });
 
 // /////////////////////////////////////////////////////////////////////////////
 // / //////////////// get profile picture for authorized user
 // //////////////////////////////////////////////////////////////////////////////
-app.get('/profilepic2', (req, res) => {
+// app.get('/profilepic2', (req, res) => {
+
+//     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+//     if (req.session.userID) { //authorized
+//         memberService.getProfilePic(req.session.userID, (result) => {
+//             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+//             res.send(result[0]);
+//         })
+//     } else { //not authorized
+//         logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
+//         res.sendStatus(401);
+//     }
+// });
+
+app.get('/profilepiccloud', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     if (req.session.userID) { //authorized
         memberService.getProfilePic(req.session.userID, (result) => {
             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-            res.send(result[0]);
+            
+            console.log('profile pic funct', result[0]);
+            res.status(200).send(result[0]);
         })
     } else { //not authorized
         logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
@@ -398,16 +404,83 @@ app.get('/profilepic2', (req, res) => {
 // /////////////////////////////////////////////////////////////////////////////
 // / /////////////////////// update profile pic
 // //////////////////////////////////////////////////////////////////////////////
-app.post('/profilepic', (req, res, next) => {
+// app.post('/profilepic', (req, res, next) => {
+
+//     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+//     if (req.session.userID) { //user is authorized
+//         next()
+//     } else {
+//         logger.log({level: 'warn', message: `Unathorised to update profile pic, 401 IP: ${ip}`});
+//         res.sendStatus(401); //not authorized
+//     }
+// }, upload.single('profilepic'), //get file (Multer function)
+//         async function (req, res, next) {
+
+//     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+//     if (req.file.path == 'public\\temp\\ERROR') {
+//         logger.log({level: 'info', message: `Update profile pic - Invalid file type ${req.file.path} IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+//         res.sendStatus(422); //Invalid file type
+//     } else {
+
+//         //resize image to 100px x 100px
+//         await sharp(__dirname + "\\" + req.file.path)
+//             .resize(100, 100, {
+//             fit: sharp.fit.cover, //maintain image aspect, crop to fit size
+//             position: sharp.strategy.entropy, //indentify light and skin tones to centre image
+//         })
+//             .withMetadata() //retains exif data, required for image orientation
+//             .toFile(__dirname + "\\public\\images\\100px" + req.file.filename)
+//             .catch(err => logger.log({level: 'err', message: `Update profile pic - ERROR: ${err} IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`}));
+
+//         //remove temporary large image
+//         fs.unlink(__dirname + "\\" + req.file.path, (err) => {
+//             if (err) {
+//                 console.error(err)
+//                 return;
+//             }
+//         })
+
+//         //get path for previous image
+//         memberService.getProfilePic(req.session.userID, (result) => {
+
+//             if (result[0].profilePicPath != '') { //previous image exists
+//                 let fullpath = "public\\" + result[0].profilePicPath;
+//                 fs.unlink(fullpath, (err) => { //delete previous image
+//                     if (err) {
+//                         console.error(err)
+//                         return;
+//                     }
+//                 })
+//             }
+//         })
+//         //add new image path
+//         let newpath = "images\\100px" + req.file.filename; //trim the public folder off path
+//         memberService.updatePic(req.session.userID, newpath, (result) => {
+//             logger.log({level: 'info', message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+//             res.sendStatus(204); //success
+//         })
+//     }
+// })
+
+// /////////////////////////////////////////////////////////////////////////////
+// / /////////////////////// update profile pic
+// //////////////////////////////////////////////////////////////////////////////
+
+app.post('/profilepiccloud', (req, res, next) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
     if (req.session.userID) { //user is authorized
+
         next()
+        
     } else {
         logger.log({level: 'warn', message: `Unathorised to update profile pic, 401 IP: ${ip}`});
         res.sendStatus(401); //not authorized
     }
+
 }, upload.single('profilepic'), //get file (Multer function)
         async function (req, res, next) {
 
@@ -418,15 +491,24 @@ app.post('/profilepic', (req, res, next) => {
         res.sendStatus(422); //Invalid file type
     } else {
 
-        //resize image to 100px x 100px
-        await sharp(__dirname + "\\" + req.file.path)
-            .resize(100, 100, {
-            fit: sharp.fit.cover, //maintain image aspect, crop to fit size
-            position: sharp.strategy.entropy, //indentify light and skin tones to centre image
-        })
-            .withMetadata() //retains exif data, required for image orientation
-            .toFile(__dirname + "\\public\\images\\100px" + req.file.filename)
-            .catch(err => logger.log({level: 'err', message: `Update profile pic - ERROR: ${err} IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`}));
+        cloudinary.uploader.upload(__dirname + "\\" + req.file.path, {
+            "tags": req.session.userID,
+            width: 100,
+            height: 100,
+            crop: "fill",
+            gravity: "face",
+            radius: 10,
+            format: "jpg"
+        }, function (err, image) {
+            console.log();
+            console.log("** Remote Url");
+            if (err) {
+                console.warn(err);
+            }
+            console.log("* " + image.public_id);
+            console.log("* " + image.url);
+            waitForAllUploads(__dirname + "\\" + req.file.path, err, image);
+         
 
         //remove temporary large image
         fs.unlink(__dirname + "\\" + req.file.path, (err) => {
@@ -437,26 +519,22 @@ app.post('/profilepic', (req, res, next) => {
         })
 
         //get path for previous image
-        memberService.getProfilePic(req.session.userID, (result) => {
+        memberService.getProfilePic(req.session.userID, (queryresult) => {
 
-            if (result[0].profilePicPath != '') { //previous image exists
-                let fullpath = "public\\" + result[0].profilePicPath;
-                fs.unlink(fullpath, (err) => { //delete previous image
-                    if (err) {
-                        console.error(err)
-                        return;
-                    }
-                })
+            if (queryresult[0].profilePicPath != '') { //previous image exists
+                cloudinary.uploader.destroy(queryresult[0].profilePicPath, function(result) { console.log(result) });
             }
         })
         //add new image path
-        let newpath = "images\\100px" + req.file.filename; //trim the public folder off path
-        memberService.updatePic(req.session.userID, newpath, (result) => {
+        memberService.updatePic(req.session.userID, image.url, (result) => {
             logger.log({level: 'info', message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
             res.sendStatus(204); //success
         })
+    }) 
     }
+    res.sendStatus(204);
 })
+
 // /////////////////////////////////////////////////////////////////////////////
 // / //////////////// get schedule for a given date for logged in user
 // //////////////////////////////////////////////////////////////////////////////
@@ -495,7 +573,7 @@ app.get('/scheduleday/:date', scheduleDayValidationRules(), (req, res) => {
 // /  get group schedules for selected group of logged in user for given
 // duration
 // /////////////////////////////////////////////////////////////////////////////
-app.get('/groupschedule/:groupID/:currDate/:numberOfDays', groupSchedValidationRules(),  (req, res) => {
+app.get('/groupschedule/:groupID/:currDate/:numberOfDays', groupSchedValidationRules(), (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 
@@ -594,10 +672,10 @@ app.post('/createevent', (req, res) => {
     }
 });
 
-////////////////////////////////////////////////////////////////////////////////
-// ///// Delete event
 // //////////////////////////////////////////////////////////////////////////////
-// ///
+// ///// Delete event
+// /////////////////////////////////////////////////////////////////////////////
+// / ///
 app.post('/deleteevent', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
@@ -635,14 +713,13 @@ app.get('/grouppics/:groupID', (req, res) => {
 // ///////////////////////////////TODO//////////////////////////////////////////
 // / ////////////// edit event, edit group, delete group delete group member,
 // change password
-// //////////////////////////////////////////////////////////////////////////////
-// //// //////////////////ADMIN
+// /////////////////////////////////////////////////////////////////////////////
+// / //// //////////////////ADMIN
 // FUNCTIONS//////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////////////////
-// ////
-// //////////////////////////////////////////////////////////////////////////////
-// /
-
+// /////////////////////////////////////////////////////////////////////////////
+// / ////
+// /////////////////////////////////////////////////////////////////////////////
+// / /
 // /////////////////////////////////////////////////////////////////////////////
 // / ////// get user list for given search value
 // //////////////////////////////////////////////////////////////////////////////
@@ -656,8 +733,7 @@ app.get('/userlist/:searchVal', (req, res) => {
 
             member.getMembers(req.params.searchVal, req.session.userID, (result) => {
                 logger.log({level: 'info', message: `Search members - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`});
-                console.log(result);
-                
+
                 res.json(result);
             })
         } else {
@@ -678,20 +754,18 @@ app.get('/activeFlag/:memberID/:activeFlag', (req, res) => {
 
     if (req.session.userID) { //has a session
 
-        console.log('req.params.activeFlag ', req.params.activeFlag);
         //is a valid admin
         if (req.headers.origin === process.env.ADMIN_ORIGIN && req.session.userType === 'Admin' && whitelist.indexOf(ip) !== -1) {
 
             //valid activeFlag value
-            if(req.params.activeFlag === '0' || req.params.activeFlag === '1'){
-            member.updateActiveFlag(req.params.memberID, req.params.activeFlag, (result) => {
-                logger.log({level: 'info', message: `Search members - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`});
-                console.log(result);
-                res.sendStatus(204);
-            })
-        }else{
-            res.sendStatus(422);
-        }
+            if (req.params.activeFlag === '0' || req.params.activeFlag === '1') {
+                member.updateActiveFlag(req.params.memberID, req.params.activeFlag, (result) => {
+                    logger.log({level: 'info', message: `Search members - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`});
+                    res.sendStatus(204);
+                })
+            } else {
+                res.sendStatus(422);
+            }
         } else {
             res.sendStatus(403);
         }
@@ -714,14 +788,14 @@ app.get('/userType/:memberID/:userType', (req, res) => {
         if (req.headers.origin === process.env.ADMIN_ORIGIN && req.session.userType === 'Admin' && whitelist.indexOf(ip) !== -1) {
 
             //valid activeFlag value
-            if(req.params.userType === 'Admin' || req.params.userType === 'Member'){
-            member.updateUserType(req.params.memberID, req.params.userType, (result) => {
-                logger.log({level: 'info', message: `Search members - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`});
-                res.sendStatus(204);
-            })
-        }else{
-            res.sendStatus(422);
-        }
+            if (req.params.userType === 'Admin' || req.params.userType === 'Member') {
+                member.updateUserType(req.params.memberID, req.params.userType, (result) => {
+                    logger.log({level: 'info', message: `Search members - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`});
+                    res.sendStatus(204);
+                })
+            } else {
+                res.sendStatus(422);
+            }
         } else {
             res.sendStatus(403);
         }
@@ -731,9 +805,11 @@ app.get('/userType/:memberID/:userType', (req, res) => {
     }
 });
 
-////////////////////////////////////////////////////////////////////////////////////
-//////////////////////delete user////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// //// ////////////////////delete
+// user////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////
+// ////
 
 app.get('/deletemember/:memberID', (req, res) => {
 
@@ -745,8 +821,7 @@ app.get('/deletemember/:memberID', (req, res) => {
 
             member.deleteMember(req.params.memberID, (result) => {
                 logger.log({level: 'info', message: `Delete member - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, searchValue: ${req.params.searchVal}`});
-                console.log('delete member', result);
-                
+
                 res.sendStatus(204);
             })
         } else {
