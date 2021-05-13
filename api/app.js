@@ -657,9 +657,31 @@ app.get('/grouppics/:groupID', (req, res) => {
     }
 });
 
+// ///////////////////////////////////////////////////////////////////
+// ///leave group
+// /////////////////////////////////////////////////////////////////
+app.get('/leavegroup/:groupID', (req, res) => {
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+    if (req.session.userID) { //authorised
+        // groupService.getGroupProfilePics(req.session.userID, req.params.groupID, (result) => {
+
+        //})
+        group.deleteGroupMember(req.session.userID, req.params.groupID, (result) =>{
+
+            logger.log({level: 'info', message: `Leave group success 204 - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, group: ${req.params.groupID}, date: ${req.params.currDate}, numDays: ${req.params.numberOfDays}`});
+            res.sendStatus(204);
+        })
+    } else { //unathorised
+        logger.log({level: 'warn', message: `Unathorised attempt to leave group, 401 IP: ${ip}`});
+        res.sendStatus(401);
+    }
+});
+
 // ///////////////////////////////TODO//////////////////////////////////////////
 // / ////////////// edit event, edit group, delete group delete group member,
-// change password
+
 // /////////////////////////////////////////////////////////////////////////////
 // / //// //////////////////ADMIN
 // FUNCTIONS//////////////////////////////////////////////////////////
@@ -753,10 +775,8 @@ app.get('/userType/:memberID/:userType', (req, res) => {
 });
 
 ////////////////////////////////////////////////////////////////////////////////
-// //// ////////////////////delete
-// user////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////////////////
-// ////
+////////////////////////delete user///////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 app.get('/deletemember/:memberID', (req, res) => {
 
