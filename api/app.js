@@ -1,7 +1,6 @@
 const express = require('express');
 require('dotenv').config();
 const datefns = require('date-fns');
-//const favicon = require('serve-favicon');
 var _db = require('./model/dbconfig');
 const cors = require('cors');
 const group = require('./model/group');
@@ -29,7 +28,8 @@ const {
     scheduleDayValidationRules,
     groupSchedValidationRules,
     createGroupSanitize,
-    sanitizeSearchVal
+    sanitizeSearchVal,
+    passwordValidationRules
 } = require('./services/validator.js');
 const {de} = require('date-fns/locale');
 var uploads = {};
@@ -38,9 +38,9 @@ function waitForAllUploads(id, err, image) {
     uploads[id] = image;
     var ids = Object.keys(uploads);
     if (ids.length === 6) {
-        console.log();
+   
         console.log('**  uploaded all files (' + ids.join(',') + ') to cloudinary');
-        //performTransformations();
+        
     }
 }
 
@@ -294,7 +294,6 @@ app.get('/users/:searchVal', sanitizeSearchVal(), (req, res) => {
 // /////////////////////////////////////////////////////////////////////////////
 // / /// return member profile information for logged in user
 // /////////////////`///////////////////////////////////////////////////////////
-// / /
 app.get('/profile', (req, res) => {
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
@@ -347,42 +346,57 @@ app.post('/profile', profileValidationRules(), (req, res) => {
     }
 });
 
+// /////////////////////////////////////////////////////////////////////////
+// reset password for logged in user
+// ////////////////////////////////////////////////////////////////////////////
+app.post('/password', passwordValidationRules(), (req, res) => {
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+    //fields are not valid return error messages
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        logger.log({level: 'warn', message: `Failed password update, 422 Invalid input ${errors} - IP: ${ip} Email: ${req.body.email}`});
+        return res
+            .status(422)
+            .json({
+                errors: errors.array()
+            });
+    }
+
+    if (req.session.userID) { //authorized
+        //posted fields are valid
+
+       
+        memberService.changePassword(req.session.userID, req.body.oldPassword, req.body.password, (result) => {
+        
+            switch(result){
+                case 401:
+                    logger.log({level: 'info', message: `Change password failed 401  - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+                    res.sendSatus(401);
+                    break;
+                case 422:
+                    message = {
+                        errors: 'Incorrect password'
+                    }
+                    logger.log({level: 'info', message: `Change password failed 422 Incorrect password  - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+                    res.status(422).json(message);
+                    break;
+                default:
+                    logger.log({level: 'info', message: `Change password sucess 204  - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+                    res.sendStatus(204);
+        }
+    })
+
+    } else { //not authorized
+        logger.log({level: 'warn', message: `Unathorized access attempt - change password - IP: ${ip}`});
+        res.sendStatus(401);
+    }
+});
+
 // /////////////////////////////////////////////////////////////////////////////
 // / //////////////// get profile picture for authorized user
 // //////////////////////////////////////////////////////////////////////////////
-// app.get('/profilepic', (req, res) => {
-
-//     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-
-//     if (req.session.userID) { //authorized
-//         memberService.getProfilePic(req.session.userID, (result) => {
-//             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-
-//             res.sendFile(__dirname + '\\public\\' + result[0].profilePicPath);
-//         })
-//     } else { //not authorized
-//         logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
-//         res.sendStatus(401);
-//     }
-// });
-
-// /////////////////////////////////////////////////////////////////////////////
-// / //////////////// get profile picture for authorized user
-// //////////////////////////////////////////////////////////////////////////////
-// app.get('/profilepic2', (req, res) => {
-
-//     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-
-//     if (req.session.userID) { //authorized
-//         memberService.getProfilePic(req.session.userID, (result) => {
-//             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-//             res.send(result[0]);
-//         })
-//     } else { //not authorized
-//         logger.log({level: 'warn', message: `Unathorized to get profile pic, 401 IP: ${ip}`});
-//         res.sendStatus(401);
-//     }
-// });
 
 app.get('/profilepiccloud', (req, res) => {
 
@@ -392,7 +406,6 @@ app.get('/profilepiccloud', (req, res) => {
         memberService.getProfilePic(req.session.userID, (result) => {
             logger.log({level: 'info', message: `Get profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
             
-            console.log('profile pic funct', result[0]);
             res.status(200).send(result[0]);
         })
     } else { //not authorized
@@ -401,68 +414,6 @@ app.get('/profilepiccloud', (req, res) => {
     }
 });
 
-// /////////////////////////////////////////////////////////////////////////////
-// / /////////////////////// update profile pic
-// //////////////////////////////////////////////////////////////////////////////
-// app.post('/profilepic', (req, res, next) => {
-
-//     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-
-//     if (req.session.userID) { //user is authorized
-//         next()
-//     } else {
-//         logger.log({level: 'warn', message: `Unathorised to update profile pic, 401 IP: ${ip}`});
-//         res.sendStatus(401); //not authorized
-//     }
-// }, upload.single('profilepic'), //get file (Multer function)
-//         async function (req, res, next) {
-
-//     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
-
-//     if (req.file.path == 'public\\temp\\ERROR') {
-//         logger.log({level: 'info', message: `Update profile pic - Invalid file type ${req.file.path} IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-//         res.sendStatus(422); //Invalid file type
-//     } else {
-
-//         //resize image to 100px x 100px
-//         await sharp(__dirname + "\\" + req.file.path)
-//             .resize(100, 100, {
-//             fit: sharp.fit.cover, //maintain image aspect, crop to fit size
-//             position: sharp.strategy.entropy, //indentify light and skin tones to centre image
-//         })
-//             .withMetadata() //retains exif data, required for image orientation
-//             .toFile(__dirname + "\\public\\images\\100px" + req.file.filename)
-//             .catch(err => logger.log({level: 'err', message: `Update profile pic - ERROR: ${err} IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`}));
-
-//         //remove temporary large image
-//         fs.unlink(__dirname + "\\" + req.file.path, (err) => {
-//             if (err) {
-//                 console.error(err)
-//                 return;
-//             }
-//         })
-
-//         //get path for previous image
-//         memberService.getProfilePic(req.session.userID, (result) => {
-
-//             if (result[0].profilePicPath != '') { //previous image exists
-//                 let fullpath = "public\\" + result[0].profilePicPath;
-//                 fs.unlink(fullpath, (err) => { //delete previous image
-//                     if (err) {
-//                         console.error(err)
-//                         return;
-//                     }
-//                 })
-//             }
-//         })
-//         //add new image path
-//         let newpath = "images\\100px" + req.file.filename; //trim the public folder off path
-//         memberService.updatePic(req.session.userID, newpath, (result) => {
-//             logger.log({level: 'info', message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
-//             res.sendStatus(204); //success
-//         })
-//     }
-// })
 
 // /////////////////////////////////////////////////////////////////////////////
 // / /////////////////////// update profile pic
@@ -500,13 +451,9 @@ app.post('/profilepiccloud', (req, res, next) => {
             radius: 10,
             format: "jpg"
         }, function (err, image) {
-            console.log();
-            console.log("** Remote Url");
             if (err) {
                 console.warn(err);
             }
-            console.log("* " + image.public_id);
-            console.log("* " + image.url);
             waitForAllUploads(__dirname + "/" + req.file.path, err, image);
          
 

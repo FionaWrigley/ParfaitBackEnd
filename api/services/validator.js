@@ -53,6 +53,15 @@ const scheduleDayValidationRules = () => {
   ]
 }
 
+const passwordValidationRules = () => {
+  return [
+    body('oldPassword', 'Current password is required').notEmpty().bail().trim().escape(),
+    //Password should contain a minimum of 8 characters, including one upper case letter, one lower case letter, and one number
+    body('password', "Password should contain a minimum of 8 characters, including one upper case lett" +
+      "er, one lower case letter, and one number.").isStrongPassword().trim().escape()
+  ]
+}
+
 const groupSchedValidationRules = () => {
   return [
     param('groupID').isNumeric().bail().isLength({
@@ -88,4 +97,5 @@ module.exports = {
   groupSchedValidationRules,
   createGroupSanitize,
   sanitizeSearchVal,
+  passwordValidationRules
 }

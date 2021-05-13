@@ -18,6 +18,36 @@ module.exports = {
         })
     },
 
+    getMemberPassword: function (id, cb) {
+        let sql = 'SELECT `password` FROM `member` where `memberID` = ?';
+            
+
+        pool.query(sql, id, function (err, results) {
+            if (err) {
+                logger.log({level: 'error', message: `Failed to get select from member, getMemberPassword, sql: ${sql}, values: ${id} error: ${err}`});
+                throw err;
+            }
+            return cb(results);
+        })
+    },
+
+    updatePassword: function (id, pass, cb) {
+        let sql = 'UPDATE `member` set `password` = ? where `memberID` = ?';
+
+        values = [
+            pass,
+            id
+        ]
+        
+        pool.query(sql, values, function (err, results) {
+            if (err) {
+                logger.log({level: 'error', message: `Failed to udpate password, updatePassword, sql: ${sql}, values: ${values} error: ${err}`});
+                throw err;
+            }
+            return cb(results);
+        })
+    },
+
     //check if email already exists
     memberExists: function (email, cb) {
 
