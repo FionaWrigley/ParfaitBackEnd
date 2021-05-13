@@ -2,7 +2,7 @@
 require('dotenv').config({path: '../.env'});
 
 module.exports = {
-    connectionLimit : 5,
+    connectionLimit : 5, //to be increased when more connections available
     host: process.env.DB_HOST, 
     user: process.env.DB_USER , 
     password: process.env.DB_PASSWORD,
