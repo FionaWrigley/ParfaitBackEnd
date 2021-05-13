@@ -473,7 +473,7 @@ app.post('/profilepiccloud', (req, res, next) => {
             }
         })
         //add new image path
-        memberService.updatePic(req.session.userID, image.url, (result) => {
+        member.updateProfilePic(req.session.userID, image.url, (result) => {
             logger.log({level: 'info', message: `Update profile pic - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
             res.sendStatus(204); //success
         })
