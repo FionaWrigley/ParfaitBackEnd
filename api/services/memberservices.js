@@ -35,8 +35,6 @@ module.exports = {
 
     changePassword: function (id, oldPass, newPass, cb){
 
-        console.log(oldPass, newPass);
-
         //check password supplied matches existing password
         member
             .getMemberPassword(id, (results) => {
