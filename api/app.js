@@ -491,7 +491,7 @@ app.post('/profilepiccloud', (req, res, next) => {
         res.sendStatus(422); //Invalid file type
     } else {
 
-        cloudinary.uploader.upload(__dirname + "\\" + req.file.path, {
+        cloudinary.uploader.upload(__dirname + "/" + req.file.path, {
             "tags": req.session.userID,
             width: 100,
             height: 100,
@@ -507,11 +507,11 @@ app.post('/profilepiccloud', (req, res, next) => {
             }
             console.log("* " + image.public_id);
             console.log("* " + image.url);
-            waitForAllUploads(__dirname + "\\" + req.file.path, err, image);
+            waitForAllUploads(__dirname + "/" + req.file.path, err, image);
          
 
         //remove temporary large image
-        fs.unlink(__dirname + "\\" + req.file.path, (err) => {
+        fs.unlink(__dirname + "/" + req.file.path, (err) => {
             if (err) {
                 console.error(err)
                 return;
