@@ -44,7 +44,7 @@ function waitForAllUploads(id, err, image) {
     }
 }
 
-//set up file storage options
+//set up file storage options//
 const storage = multer.diskStorage({
     destination: './public/temp',
     filename: function (req, file, cb) {
