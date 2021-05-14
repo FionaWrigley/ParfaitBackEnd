@@ -5,6 +5,7 @@ const member = require('../model/member');
 const group = require('../model/group');
 var crypto = require('crypto');
 var validator = require('validator');
+var SHA256 = require("crypto-js/sha256");
 
 module.exports = {
     login: function (email, password, cb) {
@@ -17,7 +18,7 @@ module.exports = {
                         let hash = crypto
                             .createHash('sha1')
                             .update(password)
-                            .digest('base64');
+                            .digest('base64');                      
 
                         if (results[0].password == hash) {
                             return cb(results[0]);
