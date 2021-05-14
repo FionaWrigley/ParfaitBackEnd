@@ -619,6 +619,48 @@ app.post('/createevent', (req, res) => {
     }
 });
 
+app.get('/event/:eventID', (req, res) => {
+
+    console.log('in event get llllllllllllllllllllllll')
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+    if (req.session.userID) { //authorized
+
+        event.getEvent(req.params.eventID, (result) => {
+            logger.log({level: 'info', message: `Get event - 200 IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, groupID:  ${result.eventID}`});
+            res.status(200).json(result[0]);
+        })
+    } else { //unathorized
+        logger.log({level: 'warn', message: `Unathorized get event, 401 IP: ${ip}`});
+        res.sendStatus(401); //unathorized
+    }       
+
+
+})
+
+
+// /////////////////////////////////////////////////////////////////////////////
+// / ////////// edit event
+// //////////////////////////////////////////////////////////////////////////////
+app.post('/editevent', (req, res) => {
+
+    console.log(req.body);
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+    let eventObj = req.body;
+
+    if (req.session.userID) { //authorized
+
+        event.editEvent(eventObj, (result) => {
+            logger.log({level: 'info', message: `Edit event - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, eventID:  ${result.eventID}`});
+            res.sendStatus(204);
+        })
+    } else { //unathorized
+        logger.log({level: 'warn', message: `Unathorized edit event, 401 IP: ${ip} eventID ${eventObj.eventID}`});
+        res.sendStatus(401); //unathorized
+    }
+});
+
 // //////////////////////////////////////////////////////////////////////////////
 // ///// Delete event
 // /////////////////////////////////////////////////////////////////////////////

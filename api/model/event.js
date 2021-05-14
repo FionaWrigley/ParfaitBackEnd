@@ -198,22 +198,25 @@ module.exports = {
         })
     },
 
-    editEvent: function  (eventID, startDate, startTime, endDate, endTime, eventName, eventDesc, repeatFrequency, repeatUntil, cb) {
-        
-        let sql = 'UPDATE `event` SET `startDate` = ?, `startTime` = ?, `endTime` = ?, `eventName` = ?, `eventDescription` = ?, `eventFrequency` = ?, `repeatUntil` = ?   WHERE eventID = ?';
+    editEvent: function  (event, cb) {
 
-        let values = [
-            eventID,
-            startDate,
-            startTime,
-            endDate,
-            endTime,
-            eventName,
-            eventDesc,
-            repeatFrequency,
-            repeatUntil
+        console.log(event);
+        
+        let sql = 'UPDATE `event` SET `startDate` = ?, `startTime` = ?, `endDate` = ?, `endTime` = ?, `eventName` = ?, `eventDescription` = ?, `repeatFrequency` = ?, `repeatUntil` = ?   WHERE eventID = ?';
+
+        let values = [     
+            event.startDate,
+            event.startTime,
+            event.endDate,
+            event.endTime,
+            event.eventName,
+            event.eventDescription,
+            event.frequency,
+            event.repeatUntil,
+            event.eventID
         ];
 
+        console.log('in event model', event)
         pool.query(sql, values, function (err, result) {
             if (err) {
                 logger.log({
@@ -222,7 +225,8 @@ module.exports = {
                   });
                 throw err;
             }
-            cb(result.insertId);
+           console.log(result);
+            cb(200);
         });
     },
 
@@ -244,6 +248,24 @@ module.exports = {
                   });
                 throw err;
             }
+            cb(result);
+        });
+    },
+
+    getEvent: function (eventID, cb) {
+      
+        console.log('in getEvent function')
+        let sql = 'SELECT * FROM `event` WHERE eventID = ?';
+
+        pool.query(sql, eventID, function (err, result) {
+            if (err) {
+                logger.log({
+                    level: 'error',
+                    message: `Failed to select event, sql: ${sql}, values: ${eventID} error: ${err}`
+                  });
+                throw err;
+            }
+            console.log('select result ', result)
             cb(result);
         });
     },
