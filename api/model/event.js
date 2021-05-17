@@ -1,6 +1,5 @@
-var mysql = require('mysql');
-var _db = require('./dbconfig');
-var pool = mysql.createPool(_db);
+
+let pool = require('./db');
 const {logger} = require('../services/logger');
 
 module.exports = {
@@ -200,8 +199,6 @@ module.exports = {
 
     editEvent: function  (event, cb) {
 
-        console.log(event);
-        
         let sql = 'UPDATE `event` SET `startDate` = ?, `startTime` = ?, `endDate` = ?, `endTime` = ?, `eventName` = ?, `eventDescription` = ?, `repeatFrequency` = ?, `repeatUntil` = ?   WHERE eventID = ?';
 
         let values = [     

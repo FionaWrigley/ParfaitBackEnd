@@ -18,6 +18,7 @@ const {logger} = require('./services/logger');
 const multer = require('multer');
 const sharp = require('sharp');
 const fs = require('fs');
+const eventService = require('./services/eventservices');
 const {unescape, validationResult} = require('express-validator');
 var cloudinary = require('cloudinary').v2
 const {default: validator} = require('validator');
@@ -32,6 +33,7 @@ const {
     passwordValidationRules
 } = require('./services/validator.js');
 const {de} = require('date-fns/locale');
+const eventservices = require('./services/eventservices');
 var uploads = {};
 
 function waitForAllUploads(id, err, image) {
@@ -39,8 +41,7 @@ function waitForAllUploads(id, err, image) {
     var ids = Object.keys(uploads);
     if (ids.length === 6) {
    
-        console.log('**  uploaded all files (' + ids.join(',') + ') to cloudinary');
-        
+        console.log('**  uploaded all files (' + ids.join(',') + ') to cloudinary'); 
     }
 }
 
@@ -645,7 +646,7 @@ app.get('/event/:eventID', (req, res) => {
 // //////////////////////////////////////////////////////////////////////////////
 app.post('/editevent', (req, res) => {
 
-    console.log(req.body);
+   
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
     let eventObj = req.body;
 
@@ -654,6 +655,12 @@ app.post('/editevent', (req, res) => {
         event.editEvent(eventObj, (result) => {
             logger.log({level: 'info', message: `Edit event - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, eventID:  ${result.eventID}`});
             res.sendStatus(204);
+        
+        //Testing!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // eventService.editEvents(eventObj, true, (result) => {
+        //     console.log(result);
+        // })
+        
         })
     } else { //unathorized
         logger.log({level: 'warn', message: `Unathorized edit event, 401 IP: ${ip} eventID ${eventObj.eventID}`});

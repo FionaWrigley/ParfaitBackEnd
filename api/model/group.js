@@ -1,6 +1,6 @@
-var mysql = require('mysql');
-var _db = require('./dbconfig');
-var pool = mysql.createPool(_db);
+
+let pool = require('./db');
+
 const {logger} = require('../services/logger');
 
 module.exports = {

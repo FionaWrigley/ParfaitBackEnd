@@ -1,4 +1,4 @@
- const e = require('express');
+const e = require('express');
 const group = require('../model/group');
 const event = require('../model/event');
 const datefns = require('date-fns');
