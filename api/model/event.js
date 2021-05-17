@@ -1,5 +1,6 @@
 
-let pool = require('./db');
+let db = require('./db');
+let pool = db.getPool();
 const {logger} = require('../services/logger');
 
 module.exports = {
