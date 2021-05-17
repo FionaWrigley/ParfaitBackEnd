@@ -6,6 +6,7 @@ const {logger} = require('../services/logger');
 
 module.exports = {
 
+
     //add an event
     createEvent: function (event, userID, cb) {
         let sql = 'INSERT INTO `event`(`startDate`, `startTime`, `endDate`, `endTime`, `eventName`,`eventDescription`, `repeatFrequency`, `repeatUntil`, `groupID`) VALUES (?)';
@@ -21,6 +22,8 @@ module.exports = {
             event.repeatUntil,
             0
         ];
+
+        console.log('making a change');
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
