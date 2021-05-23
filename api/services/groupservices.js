@@ -168,15 +168,16 @@ getGroupSchedules2: function (gID, minDateStr, numberOfDays, userID, cb){
                         
                         let mIndex = groupSched.members.length-1;
 
-                        for(days = 0; days < numberOfDays; days++){
+                        let numDays1 = numberOfDays;
+                        //numDays1++;
+
+                        for(days = 0; days < numDays1; days++){
                                      groupSched.members[mIndex].events.push([]);
                          }
                     }
 
                     event.getGroupEvents(minDateStr, maxDateStr, userList, (results) => {
                         
-                        // if(results.length > 0){ //some results were returned from db
-
                             for(i=0; i < results.length; i++){ //foreach db record, insert into group schedule object
                                 
                                 //check if the member already exists as a group member
@@ -205,26 +206,24 @@ getGroupSchedules2: function (gID, minDateStr, numberOfDays, userID, cb){
                                     if(datefns.isEqual(d, startDate) && datefns.isEqual(d, endDate)){
 
                                     let newEvent = {eventID: results[i].eventID, eventName: results[i].eventName, eventDescription: results[i].eventDescription, eventDate: results[i].startDate, startTime: results[i].startTime, endTime: results[i].endTime}
+                                   
+                                   
                                     groupSched.members[memberIndex].events[dateIndex].push(newEvent);
-                                    //groupSched.members[memberIndex].events.push(newEvent);
-
+                             
                                     }else if(datefns.isEqual(d, startDate) && datefns.isBefore(d, endDate)){
 
                                         let newEvent = {eventID: results[i].eventID, eventName: results[i].eventName, eventDescription: results[i].eventDescription, eventDate: results[i].startDate, startTime: results[i].startTime, endTime: '23:59:00'}
                                         groupSched.members[memberIndex].events[dateIndex].push(newEvent);
-                                        //groupSched.members[memberIndex].events.push(newEvent);
 
                                     }else if(datefns.isAfter(d, startDate) && datefns.isBefore(d, endDate)){
 
                                         let newEvent = {eventID: results[i].eventID, eventName: results[i].eventName, eventDescription: results[i].eventDescription, eventDate: d.toISOString().slice(0,10), startTime: '00:00:00', endTime: '23:59:00'}
                                         groupSched.members[memberIndex].events[dateIndex].push(newEvent);
-                                        //groupSched.members[memberIndex].events.push(newEvent);
 
                                     }else if(datefns.isAfter(d, startDate) && datefns.isEqual(d, endDate)){
 
                                         let newEvent = {eventID: results[i].eventID, eventName: results[i].eventName, eventDescription: results[i].eventDescription, eventDate: results[i].endDate, startTime: '00:00:00', endTime: results[i].endTime}
                                         groupSched.members[memberIndex].events[dateIndex].push(newEvent);
-                                        //groupSched.members[memberIndex].events.push(newEvent);
                                     }
                                     //increment date
                                     d = datefns.add(d, {days: 1});
@@ -232,7 +231,7 @@ getGroupSchedules2: function (gID, minDateStr, numberOfDays, userID, cb){
                             }
                         cb(groupSched);
                 })
-            }else{
+             }else{
                 cb(groupSched);
             }
     })

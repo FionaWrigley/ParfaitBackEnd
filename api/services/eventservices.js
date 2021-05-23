@@ -3,54 +3,70 @@ const datefns = require('date-fns');
 
 
  module.exports = {
-    createEvents: function (eventData, cb){
+    createEvents: function (eventData, userID, multi, cb){
 
         let repeatEventArr = [];
         let day = new Date(eventData.startDate);
         let endDay = new Date(eventData.endDate);
-        let repEnd = (datefns.add(new Date(eventData.repeatUntil),  {days: 1}));
-        let key=eventData.eventName + new Date().getTime();
-               
-                while(datefns.isBefore(day, repEnd)){ 
-                    console.log(true);
-                    let tempEvent = { 
-                        eventName: eventData.eventName,
-                        eventDescription: eventData.eventDescription,
-                        startDate: datefns.format(day,'yyyy-MM-dd'),
-                        startTime: eventData.startTime,
-                        endDate: datefns.format(endDay,'yyyy-MM-dd'),
-                        endTime: eventData.endTime,
-                        frequency: eventData.frequency,
-                        repeatUntil: eventData.repeatUntil,
-                        repeatEventKey: key
-                    }
+        let key=userID + new Date().getTime();
+        let repEnd;
 
+        if(eventData.repeatUntil == ''){
+            repEnd = (datefns.add(day,  {days: 1}));
+            
+        }else{
+            repEnd = (datefns.add(new Date(eventData.repeatUntil),  {days: 1}));
+        }
+
+                while(datefns.isBefore(day, repEnd)){ 
+                    let tempEvent = [
+                        datefns.format(day,'yyyy-MM-dd'),
+                        eventData.startTime,
+                        datefns.format(endDay,'yyyy-MM-dd'),
+                        eventData.endTime,
+                        eventData.eventName,
+                        eventData.eventDescription,
+                        eventData.frequency,
+                        eventData.repeatUntil,
+                        0,
+                        key];
+                    
                     repeatEventArr.push(tempEvent);
 
                     switch (eventData.frequency){
                         case 'Daily':
                             day = datefns.add(day, {days: 1});
                             endDay = datefns.add(endDay, {days: 1}) 
-                            this.break;
-                        break;
+                            break;
+                        
                         case 'Weekly':
                             day = datefns.add(day, {days: 7});
                             endDay = datefns.add(endDay, {days: 7})
-                            this.break;
-                        break;
+                            break;
+                        
                         case 'Monthly':
                             day = datefns.add(day, {months: 1});
                             endDay = datefns.add(endDay, {months: 1})
-                            this.break;
-                        break;
+                            break;
+                       
                         case 'Annually':
                             day = datefns.add(day, {years: 1});
                             endDay = datefns.add(endDay, {years: 1})
-                            this.break;
+                            break;
+                        default: 
+                            day = datefns.add(day, {years: 1});
+                            break;
+
                     } 
-                    console.log(repeatEventArr);
-            
-        }
+                    
+                }
+
+                    console.log('rep event array', repeatEventArr);
+
+                    event.createEvents(repeatEventArr, userID, (results) => {
+                        cb(results);
+                    })
+        
         
         
         //if repeatFrequency == daily

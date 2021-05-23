@@ -94,7 +94,7 @@ var parfaitOptions = {
 
 app.use(cors(parfaitOptions));
 
-var whitelist = ['10.0.0.40', '::1', '172.20.208.1', process.env.ADMIN_IP1];
+var whitelist = ['10.0.0.40', '::1', process.env.ADMIN_IP1, process.env.ADMIN_IP2, process.env.ADMIN_IP3];
 
 var sessionStore = new MySQLStore(_db);
 app.enable('trust proxy', true);
@@ -539,7 +539,9 @@ app.get('/groupschedule/:groupID/:currDate/:numberOfDays', groupSchedValidationR
     if (req.session.userID) { //authorised
         groupService.getGroupSchedules2(req.params.groupID, req.params.currDate, req.params.numberOfDays, req.session.userID, (result) => {
             logger.log({level: 'info', message: `Get group schedule - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, group: ${req.params.groupID}, date: ${req.params.currDate}, numDays: ${req.params.numberOfDays}`});
-            res.send(result);
+            console.log('done, result: ', result)
+            
+            res.status(200).send(result);
         })
     } else { //unathorised
         logger.log({level: 'warn', message: `Unathorised to get group schedule, 401 IP: ${ip}`});
@@ -610,9 +612,15 @@ app.post('/createevent', (req, res) => {
 
     if (req.session.userID) { //authorized
 
-        event.createEvent(eventObj, req.session.userID, (result) => {
-            logger.log({level: 'info', message: `Create event - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, groupID:  ${result.eventID}`});
-            res.sendStatus(204);
+        // event.createEvent(eventObj, req.session.userID, (result) => {
+        //     logger.log({level: 'info', message: `Create event - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, groupID:  ${result.eventID}`});
+        //     res.sendStatus(204);
+        //})
+
+        //Testing!!!!!!!!!!!!!!!!!!!!!!!!!!
+        eventService.createEvents(eventObj, req.session.userID, true, (result) => {
+             logger.log({level: 'info', message: `Create event - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, groupID:  ${result.eventID}`});
+             res.sendStatus(204);
         })
     } else { //unathorized
         logger.log({level: 'warn', message: `Unathorized create event, 401 IP: ${ip}`});
@@ -655,11 +663,6 @@ app.post('/editevent', (req, res) => {
         event.editEvent(eventObj, (result) => {
             logger.log({level: 'info', message: `Edit event - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, eventID:  ${result.eventID}`});
             res.sendStatus(204);
-        
-        //Testing!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // eventService.editEvents(eventObj, true, (result) => {
-        //     console.log(result);
-        // })
         
         })
     } else { //unathorized

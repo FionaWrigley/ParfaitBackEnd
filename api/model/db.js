@@ -6,9 +6,15 @@ let pool;
 module.exports = {
 
     getPool: function () {
-        if (pool) return pool; // if it is already there, grab it here
+        if (pool){ 
+            console.log('pool');           
+            return pool; // if it is already there, grab it here
+
+        }else{
         console.log('no pool');
         pool = mysql.createPool(_dbconfig);
         return pool;
-}
+    
+        }
+    }
 }

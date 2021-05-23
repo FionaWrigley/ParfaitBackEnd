@@ -23,7 +23,6 @@ module.exports = {
             0
         ];
 
-        console.log('making a change');
         pool.getConnection((err, connection) => {
             connection.beginTransaction((err) => {
                 if (err) {
@@ -77,6 +76,101 @@ module.exports = {
                     });
                 })
             })
+        })
+    },
+
+    createEvents: function (eventArr, userID, cb) {
+
+        console.log('eventArray!! ', eventArr);
+        let sql = 'INSERT INTO `event`(`startDate`, `startTime`, `endDate`, `endTime`, `eventName`,`eventDescription`, `repeatFrequency`, `repeatUntil`, `groupID`, `repeatEventKey`) VALUES ?';
+
+        pool.getConnection((err, connection) => {
+            connection.beginTransaction((err) => {
+                if (err) {
+                    logger.log({
+                        level: 'error',
+                        message: `Failed to create connection, createEvent, error: ${err}`
+                      });
+                    throw err;
+                }
+                console.log('eventArray: ', eventArr)
+                connection.query(sql, [eventArr], (err, results) => {
+                    if (err) {
+                        return connection.rollback(() => {
+                            logger.log({
+                                level: 'error',
+                                message: `Failed to insert into event, sql: ${sql}, values: ${eventArr} error: ${err}`
+                              });
+                            connection.release();
+                            throw err;
+                        });
+                    }
+                    
+                    console.log("wonder wonder wonder");
+                    console.log('ddd: ', eventArr[0][9]);
+
+                    sql = 'SELECT `eventID` FROM `event` WHERE `repeatEventKey` =  ?';
+
+                    connection.query(sql, eventArr[0][9], (error, eventIDArr) => {
+                        if (error) {
+                            return connection.rollback(() => {
+                                logger.log({
+                                    level: 'error',
+                                    message: `Failed to insert into eventmember, sql: ${sql}, values: ${eventArr[9]} error: ${err}`
+                                  });
+                                connection.release();
+                                throw error;
+                            });
+                        }
+
+                        let userEventRecords = [];
+                        
+                        console.log(eventIDArr);
+
+                        for(let i=0; i < eventIDArr.length; i++){
+
+                            userEventRecords.push([eventIDArr[i].eventID, userID, true]);
+
+                        }
+
+
+
+
+                    
+
+                    sql = 'INSERT INTO `eventmember`(`eventID`, `memberID`, `acceptedFlag`) VALUES ?';
+                    
+                    
+                    connection.query(sql, [userEventRecords], (error, results) => {
+                        if (error) {
+                            return connection.rollback(() => {
+                                logger.log({
+                                    level: 'error',
+                                    message: `Failed to insert into eventmember, sql: ${sql}, values: ${userEventRecords} error: ${err}`
+                                  });
+                                connection.release();
+                                throw error;
+                            });
+                        }
+                        connection
+                            .commit(function (err) {
+                                if (err) {
+                                    return connection.rollback(function () {
+                                        logger.log({
+                                            level: 'error',
+                                            message: `Failed to commit, create event, error: ${err}`
+                                          });
+                                        connection.release();
+                                        throw err;
+                                    });
+                                }
+                                connection.release();
+                                return cb(200);
+                            });
+                    });
+                })
+            })
+        })
         })
     },
 
