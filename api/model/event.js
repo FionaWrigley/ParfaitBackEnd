@@ -105,9 +105,6 @@ module.exports = {
                             throw err;
                         });
                     }
-                    
-                    console.log("wonder wonder wonder");
-                    console.log('ddd: ', eventArr[0][9]);
 
                     sql = 'SELECT `eventID` FROM `event` WHERE `repeatEventKey` =  ?';
 

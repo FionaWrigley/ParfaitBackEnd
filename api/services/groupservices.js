@@ -147,7 +147,10 @@ getGroupSchedules2: function (gID, minDateStr, numberOfDays, userID, cb){
 
     if (numberOfDays > 365){ numberOfDays = 365} //schedule should never return more than a year
 
-    let maxDate = datefns.add(minDate, {days: numberOfDays});
+    let adjustedDays=numberOfDays;
+    adjustedDays--; //account for date functions not including current date in number of days count
+    
+    let maxDate = datefns.add(minDate, {days: adjustedDays});
     let maxDateStr = datefns.format(maxDate, 'yyyy-MM-dd');
 
     group.getGroupDetails(gID, userID, (result) => {
@@ -202,12 +205,17 @@ getGroupSchedules2: function (gID, minDateStr, numberOfDays, userID, cb){
 
                                 while(datefns.isBefore(d, endDate) || datefns.isEqual(d, endDate)){
                 
+                                    console.log('minDate ', minDate.toDateString())
+                                    console.log('d ', d.toDateString())
+                                    
                                     let dateIndex = datefns.differenceInDays(d, minDate);
+
+                                    console.log('date diff ', dateIndex)
+
                                     if(datefns.isEqual(d, startDate) && datefns.isEqual(d, endDate)){
 
                                     let newEvent = {eventID: results[i].eventID, eventName: results[i].eventName, eventDescription: results[i].eventDescription, eventDate: results[i].startDate, startTime: results[i].startTime, endTime: results[i].endTime}
-                                   
-                                   
+                                    
                                     groupSched.members[memberIndex].events[dateIndex].push(newEvent);
                              
                                     }else if(datefns.isEqual(d, startDate) && datefns.isBefore(d, endDate)){
