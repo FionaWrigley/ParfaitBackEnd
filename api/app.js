@@ -4,6 +4,7 @@ const datefns = require('date-fns');
 var _db = require('./model/dbconfig');
 const cors = require('cors');
 const group = require('./model/group');
+const sessionobj = require('./model/sessiondata');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 var MySQLStore = require('express-mysql-session')(session);
@@ -843,6 +844,67 @@ app.get('/deletemember/:memberID', (req, res) => {
 
                 res.sendStatus(204);
             })
+        } else {
+            res.sendStatus(403);
+        }
+    } else { //not authorized
+        logger.log({level: 'warn', message: `Unathorized access attempt - search users - IP: ${ip}`});
+        res.sendStatus(401);
+    }
+});
+
+// /////////////////////////////////////////////////////////////////////////////
+// / ////// get sessions
+// //////////////////////////////////////////////////////////////////////////////
+app.get('/sessions', (req, res) => {
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+    if (req.session.userID) { //has a session
+
+        //is a valid admin
+        if (req.headers.origin === process.env.ADMIN_ORIGIN && req.session.userType === 'Admin' && whitelist.indexOf(ip) !== -1) {
+
+                sessionobj.getSessions((result) => {
+                    logger.log({level: 'info', message: `Get sessions - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+                    res.status(200).send(result);
+                })
+            
+        } else {
+            res.sendStatus(403);
+        }
+    } else { //not authorized
+        logger.log({level: 'warn', message: `Unathorized access attempt - search users - IP: ${ip}`});
+        res.sendStatus(401);
+    }
+});
+
+// /////////////////////////////////////////////////////////////////////////////
+// / ////// get sessions
+// //////////////////////////////////////////////////////////////////////////////
+app.get('/deletesession/:id', (req, res) => {
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
+
+    if (req.session.userID) { //has a session
+
+        //is a valid admin
+        if (req.headers.origin === process.env.ADMIN_ORIGIN && req.session.userType === 'Admin' && whitelist.indexOf(ip) !== -1) {
+
+            if(req.params.id === '*'){
+
+                sessionobj.deleteAllSessions((result) => {
+                    logger.log({level: 'info', message: `Delete all sessions - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+                    res.sendStatus(204);
+                })
+
+            }else{
+                sessionobj.deleteSession(req.params.id, (result) => {
+                    logger.log({level: 'info', message: `Delete session - IP: ${ip}, user session: ${req.session.id}, deleted session ${req.params.id} MemberID: ${req.session.userID}, userType: ${req.session.userType}`});
+                    res.sendStatus(204);
+                })
+            }
+            
         } else {
             res.sendStatus(403);
         }
