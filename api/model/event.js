@@ -81,7 +81,6 @@ module.exports = {
 
     createEvents: function (eventArr, userID, cb) {
 
-        console.log('eventArray!! ', eventArr);
         let sql = 'INSERT INTO `event`(`startDate`, `startTime`, `endDate`, `endTime`, `eventName`,`eventDescription`, `repeatFrequency`, `repeatUntil`, `groupID`, `repeatEventKey`) VALUES ?';
 
         pool.getConnection((err, connection) => {
@@ -93,7 +92,7 @@ module.exports = {
                       });
                     throw err;
                 }
-                console.log('eventArray: ', eventArr)
+              
                 connection.query(sql, [eventArr], (err, results) => {
                     if (err) {
                         return connection.rollback(() => {
@@ -121,8 +120,6 @@ module.exports = {
                         }
 
                         let userEventRecords = [];
-                        
-                        console.log(eventIDArr);
 
                         for(let i=0; i < eventIDArr.length; i++){
 
@@ -309,7 +306,7 @@ module.exports = {
             event.eventID
         ];
 
-        console.log('in event model', event)
+        
         pool.query(sql, values, function (err, result) {
             if (err) {
                 logger.log({
@@ -318,7 +315,6 @@ module.exports = {
                   });
                 throw err;
             }
-           console.log(result);
             cb(200);
         });
     },
@@ -347,7 +343,6 @@ module.exports = {
 
     getEvent: function (eventID, cb) {
       
-        console.log('in getEvent function')
         let sql = 'SELECT * FROM `event` WHERE eventID = ?';
 
         pool.query(sql, eventID, function (err, result) {
@@ -358,7 +353,6 @@ module.exports = {
                   });
                 throw err;
             }
-            console.log('select result ', result)
             cb(result);
         });
     },

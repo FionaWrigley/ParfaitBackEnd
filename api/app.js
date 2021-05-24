@@ -79,13 +79,7 @@ const app = express();
 var parfaitOptions = {
     credentials: true,
     methods: [
-        "GET",
-        "POST",
-        "PUT",
-        "PATCH",
-        "DELETE",
-        "HEAD",
-        "OPTIONS"
+        "GET", "POST","PUT","PATCH","DELETE","HEAD","OPTIONS"
     ],
     allowedHeaders: [
         "Origin", "Content-Type", "Authorization", "x-requested-with"
@@ -540,8 +534,6 @@ app.get('/groupschedule/:groupID/:currDate/:numberOfDays', groupSchedValidationR
     if (req.session.userID) { //authorised
         groupService.getGroupSchedules2(req.params.groupID, req.params.currDate, req.params.numberOfDays, req.session.userID, (result) => {
             logger.log({level: 'info', message: `Get group schedule - IP: ${ip}, session: ${req.session.id}, MemberID: ${req.session.userID}, userType: ${req.session.userType}, group: ${req.params.groupID}, date: ${req.params.currDate}, numDays: ${req.params.numberOfDays}`});
-            console.log('done, result: ', result)
-            
             res.status(200).send(result);
         })
     } else { //unathorised
@@ -631,7 +623,6 @@ app.post('/createevent', (req, res) => {
 
 app.get('/event/:eventID', (req, res) => {
 
-    console.log('in event get llllllllllllllllllllllll')
 
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress; //client ip address
 

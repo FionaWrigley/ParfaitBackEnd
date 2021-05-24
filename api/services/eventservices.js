@@ -61,8 +61,6 @@ const datefns = require('date-fns');
                     
                 }
 
-                    console.log('rep event array', repeatEventArr);
-
                     event.createEvents(repeatEventArr, userID, (results) => {
                         cb(results);
                     })
@@ -89,8 +87,6 @@ const datefns = require('date-fns');
 
     editEvents: function (eventData, singleEvent, cb){
 
-        console.log('we are the champions')
-        console.log(eventData);
         cb(eventData);
 
         this.createEvents(eventData, cb);
