@@ -61,12 +61,16 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({storage: storage});
+const app = express();
 
 //set up rate limits
 const secondLimit = rateLimit({
     windowMs: 1000, // 1 second
     max: 20 // limit each IP to 20 requests per 1000 windowMs - 20 per second
-    //MORE THAN 1 PER SECOND REQUIRED TO HANDLE MULTIPLE COMPONENTS RENDERING / FETCHING AT ONCE
+    // MORE THAN 1 PER SECOND REQUIRED TO HANDLE MULTIPLE COMPONENTS 
+    // RENDERING / FETCHING AT ONCE. MULTIPLE CONCURRENT FETCHES OF SMALLER DATA CHUNKS
+    // IS MORE PERFORMANT THAN SINGLE LARGE LOADS HENCE A HIGHER RATE LIMIT IS PREFERRED
+    
 });
 
 const dailyLimit = rateLimit({
@@ -74,7 +78,11 @@ const dailyLimit = rateLimit({
     max: 1000 // limit each IP to 1000 requests per windowMs (1000 per 24 hours)
 });
 
-const app = express();
+// RATE LIMITING prevents test scripts please comment this line when doing Jest scripts
+ app.use(secondLimit, dailyLimit); //returns error code 429 when either rate
+// limit reached
+
+
 
 var parfaitOptions = {
     credentials: true,
@@ -114,9 +122,7 @@ app.use(bodyParser.urlencoded({parameterLimit: 100000, extended: true, limit: '5
 app.use(bodyParser.raw({limit: '50mb'}));
 app.use(express.static('public'));
 
-// RATE LIMITING prevents test scripts hence is currently commmented out
-// app.use(secondLimit, dailyLimit); //returns error code 429 when either rate
-// limit reached
+
 // /////////////////////////////////////////////////////////////////////////////
 // /
 // //////////////////////////Routes/////////////////////////////////////////////
